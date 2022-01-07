@@ -34,29 +34,79 @@
       <Item class="Script" referent="5">
         <Properties>
           <string name="Name">ExplorerKuraServer</string>
-          <string name="Source">local Players = game:GetService("Players")
+          <string name="Source">--[[
+
+Copyright 2022 Explorers of the Metaverse
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       [redacted]
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+]]
+
+--!strict
+
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GroupService = game:GetService("GroupService")
+local TextService = game:GetService("TextService")
 
 local TESTING_MODE = 1 -- Set to false or 0 to disable, or 1 for Educator or 2 for Student
-local PartyTable
+local PartyTable = table.create(Players.MaxPlayers)
 local Educator
+
+local PlayerTeleportTargets = table.create(Players.MaxPlayers)
+local TeleportTargets = require(script.TeleportTargets)
 
 local RE = Instance.new("RemoteEvent")
 RE.Name = "KuraRE"
 RE.Parent = ReplicatedStorage
 
-RE.OnServerEvent:Connect(function(player, command, arg)
-    
+RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
+    if player == Educator then
+        -- print(command, arg)
+        if command == "PlayerFrames" then
+            if typeof(arg.Action) == "string" then
+                if arg.Action == "TeleportTo" then
+                    if arg.Target then
+                        PlayerTeleportTargets[player]:TeleportTo(PlayerTeleportTargets[arg.Target])
+                    end
+                elseif arg.Action == "TeleportFrom" then
+                    if arg.Target then
+                        PlayerTeleportTargets[arg.Target]:TeleportTo(PlayerTeleportTargets[player])
+                    end
+                elseif arg.Action == "Mute" then
+                    RE:FireClient(arg.Player, {"Mute"})
+                elseif arg.Action == "Unmute" then
+                    RE:FireClient(arg.Player, {"Unmute"})
+                elseif arg.Action == "ShowLocator" then
+
+                elseif arg.Action == "HideLocator" then
+
+                else
+                    error("Action arg " ..arg.Action .." not found.")
+                end
+            end
+        end
+    end
 end)
 
 local RF = Instance.new("RemoteFunction")
 RF.Name = "KuraRF"
 RF.Parent = ReplicatedStorage
 
-RF.OnServerInvoke = function(player, command, arg)
+RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
     if command == "CanUseKura" then
         if typeof(TESTING_MODE) == "number" then
+            Educator = player
             return if TESTING_MODE == 0 then false else TESTING_MODE
         else
             if Educator == player then
@@ -66,6 +116,28 @@ RF.OnServerInvoke = function(player, command, arg)
             else
                 return
             end
+        end
+    elseif command == "LatestKuraVersion" then
+        return require(8169284660)
+    elseif command =="Announcement" then
+        if typeof(arg.AnnouncementType) == "string" then
+            local message: string
+            local success, errorString = pcall(function()
+                local MessageFilterResult = TextService:FilterStringAsync(arg.Message, player.UserId, Enum.TextFilterContext.PublicChat)
+                message = MessageFilterResult:GetNonChatStringForBroadcastAsync()
+            end)
+            if success then
+                -- print("filter success")
+                RE:FireAllClients({"Announcement", arg.AnnouncementType, message})
+                return 0
+            else
+                -- print("filter failure")
+                warn(errorString)
+                return 1
+            end
+        else
+            -- print("announcementtype not string")
+            return 1
         end
     end
 end
@@ -82,7 +154,7 @@ local function UpdatePlayerPermissions(educator)
     end
 end
 
-local function PlayerJoinFunc(player)
+local function PlayerJoinFunc(player: Player)
     local PlayerJoinData = player:GetJoinData()
     if PlayerJoinData.SourcePlaceId == 2901715109 or PlayerJoinData.SourcePlaceId == 3088421028 then
         -- So they joined from an Explorer Place Id
@@ -104,47 +176,348 @@ local function PlayerJoinFunc(player)
             RE:Fire({"KuraSetup", 2})
         end
     end
+    coroutine.resume(coroutine.create(function()
+        local character = player.Character or player.CharacterAdded:Wait()
+        PlayerTeleportTargets[player] = TeleportTargets.New(player)
+        print("TeleportTarget added!")
+    end))
 end
 
-Players.PlayerAdded:Connect(PlayerJoinFunc)</string>
+Players.PlayerAdded:Connect(PlayerJoinFunc)
+
+Players.PlayerRemoving:Connect(function(player)
+    PlayerTeleportTargets[player]:Destroy()
+end)
+
+for _, v in pairs(Players:GetPlayers()) do
+    PlayerJoinFunc(v)
+end</string>
         </Properties>
-        <Item class="Folder" referent="6">
+        <Item class="ModuleScript" referent="6">
+          <Properties>
+            <string name="Name">Maid</string>
+            <string name="Source">-- Maid
+-- Author: Quenty
+-- Source: https://github.com/Quenty/NevermoreEngine/blob/8ef4242a880c645b2f82a706e8074e74f23aab06/Modules/Shared/Events/Maid.lua
+-- License: MIT (https://github.com/Quenty/NevermoreEngine/blob/version2/LICENSE.md)
+
+
+---	Manages the cleaning of events and other things.
+-- Useful for encapsulating state and make deconstructors easy
+-- @classmod Maid
+-- @see Signal
+
+local Maid = {}
+Maid.ClassName = "Maid"
+
+--- Returns a new Maid object
+-- @constructor Maid.new()
+-- @treturn Maid
+function Maid.new()
+	return setmetatable({
+		_tasks = {}
+	}, Maid)
+end
+
+function Maid.isMaid(value)
+	return type(value) == "table" and value.ClassName == "Maid"
+end
+
+--- Returns Maid[key] if not part of Maid metatable
+-- @return Maid[key] value
+function Maid:__index(index)
+	if Maid[index] then
+		return Maid[index]
+	else
+		return self._tasks[index]
+	end
+end
+
+--- Add a task to clean up. Tasks given to a maid will be cleaned when
+--  maid[index] is set to a different value.
+-- @usage
+-- Maid[key] = (function)         Adds a task to perform
+-- Maid[key] = (event connection) Manages an event connection
+-- Maid[key] = (Maid)             Maids can act as an event connection, allowing a Maid to have other maids to clean up.
+-- Maid[key] = (Object)           Maids can cleanup objects with a `Destroy` method
+-- Maid[key] = nil                Removes a named task. If the task is an event, it is disconnected. If it is an object,
+--                                it is destroyed.
+function Maid:__newindex(index, newTask)
+	if Maid[index] ~= nil then
+		error(("'%s' is reserved"):format(tostring(index)), 2)
+	end
+
+	local tasks = self._tasks
+	local oldTask = tasks[index]
+
+	if oldTask == newTask then
+		return
+	end
+
+	tasks[index] = newTask
+
+	if oldTask then
+		if type(oldTask) == "function" then
+			oldTask()
+		elseif typeof(oldTask) == "RBXScriptConnection" then
+			oldTask:Disconnect()
+		elseif oldTask.Destroy then
+			oldTask:Destroy()
+		elseif oldTask.destroy then
+			oldTask:destroy()
+		end
+	end
+end
+
+--- Same as indexing, but uses an incremented number as a key.
+-- @param task An item to clean
+-- @treturn number taskId
+function Maid:giveTask(task)
+	if not task then
+		error("Task cannot be false or nil", 2)
+	end
+
+	local taskId = #self._tasks+1
+	self[taskId] = task
+
+	if type(task) == "table" and (not (task.Destroy or task.destroy)) then
+		warn("[Maid.GiveTask] - Gave table task without .Destroy\n\n" .. debug.traceback())
+	end
+
+	return taskId
+end
+
+--[[ I wont' be using promises for TopbarPlus so we can ignore this method
+function Maid:givePromise(promise)
+	if (promise:getStatus() ~= Promise.Status.Started) then
+		return promise
+	end
+
+	local newPromise = Promise.resolve(promise)
+	local id = self:giveTask(newPromise)
+
+	-- Ensure GC
+	newPromise:finally(function()
+		self[id] = nil
+	end)
+
+	return newPromise, id
+end--]]
+
+function Maid:give(taskOrPromise)
+	local taskId
+	if type(taskOrPromise) == "table" and taskOrPromise.isAPromise then
+		_, taskId = self:givePromise(taskOrPromise)
+	else
+		taskId = self:giveTask(taskOrPromise)
+	end
+	return taskOrPromise, taskId
+end
+
+--- Cleans up all tasks.
+-- @alias Destroy
+function Maid:doCleaning()
+	local tasks = self._tasks
+
+	-- Disconnect all events first as we know this is safe
+	for index, task in pairs(tasks) do
+		if typeof(task) == "RBXScriptConnection" then
+			tasks[index] = nil
+			task:Disconnect()
+		end
+	end
+
+	-- Clear out tasks table completely, even if clean up tasks add more tasks to the maid
+	local index, task = next(tasks)
+	while task ~= nil do
+		tasks[index] = nil
+		if type(task) == "function" then
+			task()
+		elseif typeof(task) == "RBXScriptConnection" then
+			task:Disconnect()
+		elseif task.Destroy then
+			task:Destroy()
+		elseif task.destroy then
+			task:destroy()
+		end
+		index, task = next(tasks)
+	end
+end
+
+--- Alias for DoCleaning()
+-- @function Destroy
+Maid.destroy = Maid.doCleaning
+Maid.clean = Maid.doCleaning
+
+return Maid</string>
+          </Properties>
+        </Item>
+        <Item class="Folder" referent="7">
           <Properties>
             <string name="Name">QuickActions</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="8">
+          <Properties>
+            <string name="Name">TeleportTargets</string>
+            <string name="Source">local obj = {}
+obj.__index = obj
+local Players = game:GetService("Players")
+local Maid = require(script.Parent.Maid)
+local TeleportObjTable = table.create(Players.MaxPlayers)
+
+local USE_PIVOTTO = false -- I'll work on this eventually
+
+local function Teleport(ToTeleport: Model, TeleportLocation: BasePart)
+    if not USE_PIVOTTO then
+        if not ToTeleport.PrimaryPart then
+            warn("Primary part is not set on the model. Check the Roblox DevHub for details to rectify.") -- In future versions, a bounding box part will be created and will be set as a primary part.
+        end
+        ToTeleport:MoveTo(TeleportLocation.Position)
+        print("teleported!")
+    else
+        error("PivotTo support is not implemented at this time, use Vector3 instead.")
+    end
+end
+
+function obj.New(Target)
+    local self = {}
+    self.Target = Target
+    self.__Maid = Maid.new()
+    if Target:IsA("BasePart") then
+        self.TargetPart = Target
+        self.Type = "Part"
+    elseif Players:GetPlayerFromCharacter(Target) or Target:IsA("Player") then
+        if Target:IsA("Player")  then
+            Target = Target.Character
+            self.Target = Target
+        end
+        if Target then
+            self.Type = "Player"
+            local Player = Players:GetPlayerFromCharacter(Target)
+            self.SpawnTargetPart = Player.RespawnLocation
+            self.__Maid.RespawnLocation = Player:GetPropertyChangedSignal("RespawnLocation"):Connect(function()
+                self.SpawnTargetPart = Target.RespawnLocation
+            end)
+            if Target:FindFirstChildWhichIsA("Humanoid") then
+                self.TargetPart = Target:FindFirstChild("HumanoidRootPart")
+                self.__Maid.CharacterAdded = Player.CharacterAdded:Connect(function(character)
+                    self.TargetPart = character:FindFirstChild("HumanoidRootPart")
+                    self.SpawnTargetPart = character.RespawnLocation
+                end)
+            end
+        else
+            warn("Character not detected!")
+            return
+        end
+    elseif Target:IsA("Model") then
+        self.TargetPart = Target
+        self.Type = "Model"
+    end
+    setmetatable(self, obj)
+    return self
+end
+
+function obj:TeleportTo(TeleportTarget: table)
+    -- Honestly I should do type checking here. But I have decided not to for laziness.
+    if self.Target:IsA("Model") then
+        if TeleportTarget then
+            if self.Type == "Player" then
+                if TeleportTarget.TargetPart then
+                    Teleport(self.Target, TeleportTarget.TargetPart)
+                    print("teleport to player")
+                else
+                    print("no targetpart!")
+                end
+            else
+                Teleport(self.Target, TeleportTarget.TargetPart)
+                print("teleport to player")
+            end
+        else
+            -- Assume teleport to spawn
+            print("teleport to spawn")
+            if self.Type == "Player" then
+                Teleport(self.Target, self.SpawnTargetPart)
+            end
+        end
+    elseif self.Target:IsA("BasePart") then
+        warn("Models only, no BaseParts!")
+    else
+        error("Unknown target type.")
+    end
+end
+
+function obj:Destroy()
+    self.__Maid = nil
+end
+
+return obj</string>
           </Properties>
         </Item>
       </Item>
     </Item>
   </Item>
-  <Item class="SoundService" referent="7">
+  <Item class="SoundService" referent="9">
     <Properties>
       <string name="Name">SoundService</string>
       <bool name="RespectFilteringEnabled">true</bool>
     </Properties>
   </Item>
-  <Item class="StarterPlayer" referent="8">
+  <Item class="StarterPlayer" referent="10">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="9">
+    <Item class="StarterPlayerScripts" referent="11">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="10">
+      <Item class="Folder" referent="12">
         <Properties>
           <string name="Name">Client</string>
         </Properties>
-        <Item class="LocalScript" referent="11">
+        <Item class="LocalScript" referent="13">
           <Properties>
             <string name="Name">ExplorerKuraClient</string>
-            <string name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            <string name="Source">--[[
+
+Copyright 2021 Explorers of the Metaverse
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       [redacted]
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+]]
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GroupService = game:GetService("GroupService")
+local StarterGui = game:GetService("StarterGui")
+local Players = game:GetService("Players")
 local Icon
 
-local Fusion = require(ReplicatedStorage:FindFirstChild("Fusion") or script.Fusion)
+local Fusion = require(script.Fusion)
 State = Fusion.State
 
-local TInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut, 0, false, 0)
+local LocalKuraVersionState = State {MajorVersionNumber = 0; MinorVersionNumber = 0; PatchNumber = 0;}
+
+local TInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut, 1, false, 0) -- repeatCount should be 0 but it is 1 otherwise Fusion borkes itself
+
+local function CopyDict(original) -- Yes, I stole this from DevHub. No, I don't care.
+	local copy = {}
+	for k, v in pairs(original) do
+		if type(v) == "table" then
+			v = CopyDict(v)
+		end
+		copy[k] = v
+	end
+	return copy
+end
 
 if ReplicatedStorage:FindFirstChild("TopbarPlusReference") then
     Icon = require(ReplicatedStorage.TopbarPlusReference.Value)
@@ -158,30 +531,48 @@ local KuraRF = ReplicatedStorage:WaitForChild("KuraRF")
 local CanUse = KuraRF:InvokeServer("CanUseKura")
 local ButtonsToggled = {}
 
-if not CanUse then
-    script:Destroy()
-end
+if not CanUse then script:Destroy() end
 
 -- UI creation time!
 
 local CurrentTab = State("nil")
-local BlackState = State(Color3.fromRGB(0,0,0))
-local WhiteState = State(Color3.fromRGB(255,255,255))
-local GreyState = State(Color3.fromRGB(30,30,30))
+local BlackState = State(Color3.fromRGB(0, 0, 0))
+local WhiteState = State(Color3.fromRGB(255, 255, 255))
+local GreyState = State(Color3.fromRGB(30, 30, 30))
+
+-- Player list states
+
+local PlayerListState = State(Players:GetPlayers())
+local MutedPlayersState = State(table.create(Players.MaxPlayers))
+
+local LocatorLib = require(script.Locators)
+local Locators = LocatorLib.New()
+local LocatorShownState = State(table.create(Players.MaxPlayers))
+
+local FULL_SCREEN_ANNOUNCEMENT_WAIT = 5
+local BODY_TEXT_SIZE = 11
 
 local ScreenGui = Fusion.New "ScreenGui" {
     DisplayOrder = 1000;
     IgnoreGuiInset = false;
     Name = "ExplorerKuraGui";
     Enabled = true;
-    Parent = game:GetService("Players").LocalPlayer.PlayerGui;
+    Parent = Players.LocalPlayer.PlayerGui
 }
 
-local ContainerPosition = State(UDim2.new(0.5, 0, -0.5, -30))
+local function CreateUICorner()
+    return Fusion.New "UICorner" {
+    CornerRadius = UDim.new(0, 5)
+};
+end
+
+local ContainerPosition = State(UDim2.new(0.5, 0, -1, 0))
+
+local RaiseHandButton
 
 local ExplorerKuraContainer = Fusion.New "Frame" {
     Name = "ExplorerKuraContainer";
-    Size = UDim2.new(0.5, 0, 0.3, 0);
+    Size = UDim2.new(0.5, 0, 0.5, 0);
     AnchorPoint = Vector2.new(0.5, 0);
     Position = Fusion.Tween(ContainerPosition, TInfo);
     BackgroundTransparency = 1;
@@ -190,27 +581,30 @@ local ExplorerKuraContainer = Fusion.New "Frame" {
     [Fusion.Children] = {
         Fusion.New "Frame" {
             Name = "Topbar";
-            Size = UDim2.new(1,0,0,30);
-            AnchorPoint = Vector2.new(0.5,0);
-            Position = UDim2.new(0.5,0,0,0);
-            BackgroundColor3 = Color3.fromRGB(0,0,0);
+            Size = UDim2.new(1, 0, 0, 30);
+            AnchorPoint = Vector2.new(0.5, 0);
+            Position = UDim2.new(0.5, 0, 0, 0);
+            BackgroundColor3 = Color3.fromRGB(0, 0, 0);
             BorderSizePixel = 0;
             Visible = true;
             [Fusion.Children] = {
                 Fusion.New("UIListLayout") {
-                    Padding = UDim.new(0, 5)
-                };
-            };
-        };
-    };
+                    Padding = UDim.new(0, 5);
+                    FillDirection = Enum.FillDirection.Horizontal;
+                    HorizontalAlignment = Enum.HorizontalAlignment.Center;
+                    VerticalAlignment = Enum.VerticalAlignment.Center;
+                }
+            }
+        }
+    }
 }
 
 local function CreateSection(props)
     return Fusion.New "ScrollingFrame" {
         Name = props.Name;
-        Size = UDim2.new(1,0,0,-30);
+        Size = UDim2.new(1, 0, 1, -30);
         AnchorPoint = Vector2.new(0.5, 0);
-        Position = UDim2.new(0.5,0,0,30);
+        Position = UDim2.new(0.5, 0, 0, 30);
         Parent = ExplorerKuraContainer;
         Visible = Fusion.Computed(function()
             if CurrentTab:get() == props.Name then
@@ -218,16 +612,22 @@ local function CreateSection(props)
             else
                 return false
             end
-        end);
-        BackgroundColor3 = Color3.fromRGB(30,30,30);
+        end),
+        BackgroundColor3 = Color3.fromRGB(30, 30, 30);
         BackgroundTransparency = 0.3;
         BorderSizePixel = 0;
         AutomaticCanvasSize = Enum.AutomaticSize.Y;
+        CanvasSize = UDim2.new(1, 0, 0, 0);
+        VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar;
+        ScrollBarThickness = 3;
+        ScrollBarImageColor3 = Color3.fromRGB(70, 70, 70)
     }, Fusion.New "TextButton" {
         Text = "";
-        AutomaticSize = Enum.AutomaticSize.X;
-        Size = UDim2.new(0,0,1,-5);
+        Name = props.Name;
+        Size = UDim2.new(0.25, -5, 1, -5);
         Parent = ExplorerKuraContainer.Topbar;
+        BackgroundTransparency = 0;
+        AutoButtonColor = true;
         BackgroundColor3 = Fusion.Computed(function()
             if CurrentTab:get() == props.Name then
                 return Fusion.Tween(WhiteState, TInfo):get()
@@ -238,79 +638,663 @@ local function CreateSection(props)
         [Fusion.Children] = {
             Fusion.New "UIListLayout" {
                 FillDirection = Enum.FillDirection.Horizontal;
-                Padding = UDim.new(0,5);
+                Padding = UDim.new(0, 5);
                 HorizontalAlignment = Enum.HorizontalAlignment.Center;
                 VerticalAlignment = Enum.VerticalAlignment.Center;
-            };
-            Fusion.New "UICorner" {
-                CornerRadius = UDim.new(1/3, 0);
-            };
+            },
+            CreateUICorner();
+            Fusion.New "UIPadding" {
+                PaddingTop = UDim.new(0, 5);
+                PaddingBottom = UDim.new(0, 5);
+                -- PaddingLeft = UDim.new(0,5);
+                -- PaddingRight = UDim.new(0,5);
+            },
             Fusion.New "ImageLabel" {
-                Size = UDim2.new(1,0,1,0);
+                Size = UDim2.new(1, 0, 1, 0);
                 SizeConstraint = Enum.SizeConstraint.RelativeYY;
                 Image = props.Image;
+                BackgroundTransparency = 1;
+                LayoutOrder = 1;
                 ImageColor3 = Fusion.Computed(function()
                     if CurrentTab:get() == props.Name then
                         return Fusion.Tween(BlackState, TInfo):get()
                     else
                         return Fusion.Tween(WhiteState, TInfo):get()
                     end
-                end);
-            };
+                end)
+            },
             Fusion.New "TextLabel" {
                 BackgroundTransparency = 1;
                 TextScaled = true;
+                LayoutOrder = 2;
+                Font = Enum.Font.GothamBold;
+                Text = props.Name;
+                Size = UDim2.new(0, 0, 1, 0);
+                AutomaticSize = Enum.AutomaticSize.X;
                 TextColor3 = Fusion.Computed(function()
                     if CurrentTab:get() == props.Name then
                         return Fusion.Tween(BlackState, TInfo):get()
                     else
                         return Fusion.Tween(WhiteState, TInfo):get()
                     end
-                end);
-            };
-        };
+                end)
+            }
+        },
         [Fusion.OnEvent("Activated")] = function()
             CurrentTab:set(props.Name)
-        end;
+        end
     }
 end
 
 local function SetupKura()
     if CanUse == 1 then
         -- Educator
+        ExplorerKuraContainer.Visible = true
         local EducationMode = Icon.new()
-        EducationMode:setImage()
+        EducationMode:setImage("rbxassetid://8127903187")
         EducationMode:setName("KuraMode")
         EducationMode:setTip("Show/Hide Explorer Kura")
         EducationMode.selected:Connect(function()
-            ContainerPosition:set(UDim2.new(0.5,0,0,-30))
+            ContainerPosition:set(UDim2.new(0.5, 0, 0, 0))
         end)
         EducationMode.deselected:Connect(function()
-            ContainerPosition:set(UDim2.new(0.5,0,0,-30))
+            ContainerPosition:set(UDim2.new(0.5, 0, -1, 0))
         end)
-        CreateSection({Name = "Players"; Image = "";})
-        CreateSection({Name = "Quick Actions"; Image = "";})
-        CreateSection({Name = "Announcements"; Image = "";})
-        CreateSection({Name = "About"; Image = "";})
+        local PlayersFrame, _ = CreateSection({
+            Name = "Classroom";
+            Image = "rbxassetid://8127901812"
+        })
+        local QuickActionsFrame, _ = CreateSection({
+            Name = "Quick Actions";
+            Image = "rbxassetid://8129843059"
+        })
+        local AnnouncementsFrame, _ = CreateSection({
+            Name = "Announcements";
+            Image = "rbxassetid://8127903374"
+        })
+        local AboutFrame, _ = CreateSection({
+            Name = "About";
+            Image = "rbxassetid://8127902797"
+        })
+        -- Players Frame
+        Fusion.New "UIListLayout" {
+            Padding = UDim.new(0, 5);
+            SortOrder = Enum.SortOrder.LayoutOrder;
+            FillDirection = Enum.FillDirection.Vertical;
+            HorizontalAlignment = Enum.HorizontalAlignment.Center;
+            VerticalAlignment = Enum.VerticalAlignment.Top;
+            Parent = PlayersFrame;
+        };
+        -- Sets up playerlist
+        local function UpdatePlayerListState()
+            PlayerListState:set(Players:GetPlayers()) -- Sorry.
+        end
+        Players.PlayerAdded:Connect(UpdatePlayerListState)
+        Players.PlayerRemoving:Connect(UpdatePlayerListState)
+        UpdatePlayerListState()
+
+        local PlayerFrames = Fusion.ComputedPairs(PlayerListState, 
+        -- Processor
+        function(_, player)
+            return State(Fusion.New "Frame" {
+                BackgroundColor3 = BlackState;
+                Size = UDim2.new(1, -10, 0, 40);
+                BorderSizePixel = 0;
+                Name = player.UserId;
+                Parent = PlayersFrame;
+                [Fusion.Children] = {
+                    CreateUICorner();
+                    Fusion.New "ObjectValue" {
+                        Name = "PlayerObj";
+                        Value = player;
+                    };
+                    Fusion.New "ImageLabel" {
+                        Image = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48);
+                        BackgroundTransparency = 1;
+                        SizeConstraint = Enum.SizeConstraint.RelativeYY;
+                        Size = UDim2.new(1,0,1,-10);
+                        ScaleType = Enum.ScaleType.Fit;
+                        AnchorPoint = Vector2.new(0, 0.5);
+                        Position = UDim2.new(0,5,0.5,0);
+                        Name = "PlayerImage";
+                    };
+                    Fusion.New "TextLabel" {
+                        Text = player.Name;
+                        TextColor3 = WhiteState;
+                        Font = Enum.Font.Gotham;
+                        AnchorPoint = Vector2.new(0, 0.5);
+                        Position = UDim2.new(0,45,0.5,0);
+                        Size = UDim2.new(0.5,-45,1,-10);
+                        BackgroundTransparency = 1;
+                        TextXAlignment = Enum.TextXAlignment.Left;
+                        TextScaled = true;
+                        Name = "PlayerName";
+                    };
+                    Fusion.New "Frame" {
+                        Name = "ButtonFrames";
+                        Size = UDim2.new(0.5,0,1,-10);
+                        AnchorPoint = Vector2.new(1, 0.5);
+                        Position = UDim2.new(1,-5,0.5,0);
+                        BackgroundTransparency = 1;
+                        [Fusion.Children] = {
+                            Fusion.New "UIListLayout" {
+                                Padding = UDim.new(0, 5);
+                                SortOrder = Enum.SortOrder.LayoutOrder;
+                                FillDirection = Enum.FillDirection.Horizontal;
+                                HorizontalAlignment = Enum.HorizontalAlignment.Right;
+                                VerticalAlignment = Enum.VerticalAlignment.Center;
+                            };
+                            Fusion.New "ImageButton" {
+                                SizeConstraint = Enum.SizeConstraint.RelativeYY;
+                                Size = UDim2.new(1,0,1,0);
+                                Name = "Locator";
+                                Image = "rbxassetid://8127902577";
+                                BackgroundColor3 = Fusion.Computed(function()
+                                    local array = CopyDict(LocatorShownState:get())
+                                    if table.find(array, player) then
+                                        return Fusion.Tween(State(Color3.fromRGB(200, 0, 0)), TInfo):get()
+                                    else
+                                        return Fusion.Tween(GreyState, TInfo):get()
+                                    end
+                                end);
+                                [Fusion.Children] = {
+                                    CreateUICorner();
+                                };
+                                [Fusion.OnEvent "Activated"] = function()
+                                    local array = CopyDict(LocatorShownState:get())
+                                    if table.find(array, player) then
+                                        Locators:HideLocator(player)
+                                        table.remove(array, table.find(array, player))
+                                    else
+                                        Locators:ShowLocator(player)
+                                        table.insert(array, player)
+                                    end
+                                    LocatorShownState:set(array)
+                                end;
+                            };
+                            Fusion.New "ImageButton" {
+                                SizeConstraint = Enum.SizeConstraint.RelativeYY;
+                                Size = UDim2.new(1,0,1,0);
+                                Name = "Chat";
+                                Image = Fusion.Computed(function()
+                                    local array = CopyDict(MutedPlayersState:get()) -- See Elttob/Fusion issue #78 to see why I have to do this
+                                    if table.find(array, player) then
+                                        return "rbxassetid://8127902088"
+                                    else
+                                        return "rbxassetid://8127903374"
+                                    end
+                                end);
+                                BackgroundColor3 = Fusion.Computed(function()
+                                    local array = CopyDict(MutedPlayersState:get())
+                                    if table.find(array, player) then
+                                        return Fusion.Tween(State(Color3.fromRGB(200, 0, 0)), TInfo):get()
+                                    else
+                                        return Fusion.Tween(GreyState, TInfo):get()
+                                    end
+                                end);
+                                [Fusion.Children] = {
+                                    CreateUICorner();
+                                };
+                                [Fusion.OnEvent "Activated"] = function()
+                                    local array = CopyDict(MutedPlayersState:get())
+                                    if table.find(array, player) then
+                                        table.remove(array, table.find(array, player))
+                                        KuraRE:FireServer("PlayerFrames", {Action = "Unmute"; Player = player})
+                                        print("unmute")
+                                    else
+                                        table.insert(array, player)
+                                        KuraRE:FireServer("PlayerFrames", {Action = "Mute"; Player = player})
+                                        print("mute")
+                                    end
+                                    MutedPlayersState:set(array)
+                                end;
+                            };
+                            Fusion.New "ImageButton" {
+                                SizeConstraint = Enum.SizeConstraint.RelativeYY;
+                                Size = UDim2.new(1,0,1,0);
+                                Name = "TeleportTo";
+                                Image = "rbxassetid://8188131920";
+                                BackgroundColor3 = GreyState;
+                                [Fusion.Children] = {
+                                    CreateUICorner();
+                                };
+                                [Fusion.OnEvent "Activated"] = function()
+                                    KuraRE:FireServer("PlayerFrames", {Action = "TeleportTo"; Target = player})
+                                end;
+                            };
+                            Fusion.New "ImageButton" {
+                                SizeConstraint = Enum.SizeConstraint.RelativeYY;
+                                Size = UDim2.new(1,0,1,0);
+                                Name = "TeleportFrom";
+                                Image = "rbxassetid://8188132131";
+                                BackgroundColor3 = GreyState;
+                                [Fusion.Children] = {
+                                    CreateUICorner();
+                                };
+                                [Fusion.OnEvent "Activated"] = function()
+                                    KuraRE:FireServer("PlayerFrames", {Action = "TeleportFrom"; Target = player})
+                                end;
+                            };
+                        };
+                    }
+                };
+            })
+        end,
+        -- Destructor
+        function(frame)
+            local Debris = game:GetService("Debris")
+            Debris:AddItem(frame)
+            local player = frame.PlayerObj.Value
+            local MutedPlayers = MutedPlayersState:get()
+            if table.find(MutedPlayers, player) then
+                table.remove(MutedPlayers, player)
+                MutedPlayersState:set(MutedPlayers)
+            end
+            local LocatorShown = LocatorShownState:get()
+            if table.find(LocatorShown, player) then
+                table.remove(LocatorShown, player)
+                LocatorShownState:set(LocatorShown)
+            end
+        end
+    )
+        -- Quick Actions Frame
+        local QuickActionsArray = KuraRF:InvokeServer({"QuickActions", "RequestActionList"})
+        
+        -- Announcements Frame
+        local function MessageBoxFrame(title, placeholder)
+            local MessageBoxState = State("")
+            local SuccessState = State(2)
+            local function SendMessage()
+                local success = KuraRF:InvokeServer("Announcement", {AnnouncementType = title; Message = MessageBoxState:get();})
+                SuccessState:set(success)
+                task.wait(1)
+                SuccessState:set(2)
+            end
+            local AnnouncementTemplate = Fusion.New "Frame" {
+                Size = UDim2.new(1,0,0.5,0);
+                BackgroundTransparency = 1;
+                AnchorPoint = Vector2.new(0.5,0);
+                Name = title;
+                Parent = AnnouncementsFrame;
+                Visible = true;
+                [Fusion.Children] = {
+                    Fusion.New "TextLabel" {
+                        AnchorPoint = Vector2.new(0.5,0.5);
+                        Position = UDim2.new(0.5,0,0.15,0);
+                        Size = UDim2.new(1,0,0.3,0);
+                        Text = title;
+                        TextScaled = true;
+                        TextColor3 = WhiteState;
+                        Font = Enum.Font.GothamSemibold;
+                        Name = "Title";
+                        BackgroundTransparency = 1;
+                        TextXAlignment = Enum.TextXAlignment.Left;
+                    };
+                    Fusion.New "TextBox" {
+                        Name = "TextBox";
+                        BackgroundColor3 = GreyState;
+                        TextColor3 = WhiteState;
+                        PlaceholderText = placeholder;
+                        PlaceholderColor3 = Color3.fromRGB(200,200,200);
+                        BackgroundTransparency = 0.3;
+                        Text = "";
+                        BorderSizePixel = 0;
+                        Font = Enum.Font.Gotham;
+                        Size = UDim2.new(1,0,0.7,0);
+                        Position = UDim2.new(0.5,0,0.3,0);
+                        AnchorPoint = Vector2.new(0.5, 0);
+                        TextXAlignment = Enum.TextXAlignment.Left;
+                        TextYAlignment = Enum.TextYAlignment.Top;
+                        TextSize = BODY_TEXT_SIZE;
+                        TextWrapped = true;
+                        [Fusion.Children] = {
+                            Fusion.New "ImageButton" {
+                                Size = UDim2.new(0, 30, 0, 30);
+                                AnchorPoint = Vector2.new(1,1);
+                                Position = UDim2.new(1,-5,1,-5);
+                                Image = "rbxassetid://8439203229";
+                                ImageColor3 = BlackState;
+                                ZIndex = 2;
+                                AutoButtonColor = true;
+                                BackgroundColor3 = Fusion.Computed(function()
+                                    if SuccessState:get() == 2 then
+                                        return  Fusion.Tween(WhiteState, TInfo):get()
+                                    elseif SuccessState:get() == 0 then
+                                        return Fusion.Tween(State(Color3.fromRGB(0,200,0)), TInfo):get()
+                                    elseif SuccessState:get() == 1 then
+                                        return Fusion.Tween(State(Color3.fromRGB(200,0,0)), TInfo):get()
+                                    end
+                                end);
+                                [Fusion.Children] = {CreateUICorner()};
+                                [Fusion.OnEvent("Activated")] = SendMessage;
+                            };
+                            CreateUICorner();
+                            Fusion.New "UIPadding" {
+                                PaddingTop = UDim.new(0, 5);
+                                PaddingBottom = UDim.new(0, 5);
+                                PaddingLeft = UDim.new(0, 5);
+                                PaddingRight = UDim.new(0, 5);
+                            };
+                        };
+                        [Fusion.OnEvent("FocusLost")] = function(enterPressed)
+                            if enterPressed then
+                                SendMessage()
+                            end
+                        end;
+                        [Fusion.OnChange("Text")] = function(text)
+                            MessageBoxState:set(text)
+                        end
+                    };
+                    Fusion.New "UIPadding" {
+                        PaddingTop = UDim.new(0, 5);
+                        PaddingBottom = UDim.new(0, 5);
+                        PaddingLeft = UDim.new(0, 5);
+                        PaddingRight = UDim.new(0, 5);
+                    };
+                };
+            }
+            return AnnouncementTemplate
+        end
+        local BarFrame = MessageBoxFrame("Topbar Announcement", "Small message at the top of the screen. Leave this text box blank to clear.")
+        BarFrame.Position = UDim2.new(0.5,0,0,0)
+        local FullScreenFrame = MessageBoxFrame("Full Screen Announcement", "Message that temporarily covers the whole screen for " ..tostring(FULL_SCREEN_ANNOUNCEMENT_WAIT) .." seconds. Leave this text box blank to clear.")
+        FullScreenFrame.Position = UDim2.new(0.5,0,0.5,0)
+        -- About Frame
+        Fusion.New "UIListLayout" {
+            Padding = UDim.new(0, 5);
+            SortOrder = Enum.SortOrder.LayoutOrder;
+            FillDirection = Enum.FillDirection.Vertical;
+            HorizontalAlignment = Enum.HorizontalAlignment.Center;
+            VerticalAlignment = Enum.VerticalAlignment.Center;
+            Parent = AboutFrame;
+        };
+        Fusion.New "ImageLabel" {
+            BackgroundColor3 = BlackState,
+            Size = UDim2.new(1, -10, 0, 100);
+            BorderSizePixel = 0;
+            Image = "rbxassetid://8167715626";
+            ScaleType = Enum.ScaleType.Fit;
+            Name = "KuraLogo";
+            LayoutOrder = 1;
+            Parent = AboutFrame;
+            [Fusion.Children] = {
+                CreateUICorner()
+            }
+        };
+        Fusion.New "TextLabel" {
+            BackgroundColor3 = BlackState;
+            Size = UDim2.new(1, -10, 0, 20);
+            BorderSizePixel = 0;
+            Name = "VersionText";
+            Text = Fusion.Computed(function()
+                local LocalCurrentKuraVersion = LocalKuraVersionState:get()
+                local LatestKuraVersion = KuraRF:InvokeServer("LatestKuraVersion")
+                local TriggerUpdate = LatestKuraVersion.TriggerUpdate
+                local function CreateWarning(props)
+                    return Fusion.New "Frame" {
+                        BackgroundColor3 = props.Colour;
+                        BorderSizePixel = 0;
+                        Size = UDim2.new(1,-10,0,30);
+                        Parent = AboutFrame;
+                        LayoutOrder = 3;
+                        [Fusion.Children] = {
+                            CreateUICorner();
+                            Fusion.New "ImageLabel" {
+                                SizeConstraint = Enum.SizeConstraint.RelativeYY;
+                                Size = UDim2.new(1,0,1,0);
+                                AnchorPoint = Vector2.new(0,0.5);
+                                Position = UDim2.new(0,5,0.5,0);
+                                ImageColor3 = BlackState;
+                                Image = "rbxassetid://8127902797";
+                                BackgroundTransparency = 1;
+                            };
+                            Fusion.New "TextLabel" {
+                                Size = UDim2.new(1,-35,1,0);
+                                AnchorPoint = Vector2.new(0,0.5);
+                                Position = UDim2.new(0,35,0.5,0);
+                                Text = props.Text;
+                                TextColor3 = BlackState;
+                                TextScaled = true;
+                                Font = Enum.Font.Gotham;
+                                BackgroundTransparency = 1;
+                            };
+                        };
+                    }
+                end
+                if typeof(LocalCurrentKuraVersion) == "table" and LocalCurrentKuraVersion.MajorVersionNumber and LocalCurrentKuraVersion.MinorVersionNumber and LocalCurrentKuraVersion.PatchNumber then
+                    if (game.CreatorType == Enum.CreatorType.User and game.CreatorId == Players.LocalPlayer.UserId) or (game.CreatorType == Enum.CreatorType.Group and GroupService:GetGroupInfoAsync(game.CreatorId).Owner.Id == Players.LocalPlayer.UserId) then
+                        -- Game developer
+                        if LocalCurrentKuraVersion.MajorVersionNumber &lt; TriggerUpdate.MajorVersionNumber then
+                            CreateWarning({Text = "This version of Kura is outdated as a new major version has been released. Please update your Kura module now."; Colour = Color3.fromRGB(255, 0, 0)})
+                        elseif LocalCurrentKuraVersion.MinorVersionNumber &lt; TriggerUpdate.MinorVersionNumber then
+                            CreateWarning({Text = "A new version of Kura has been released. Please update your Kura module now."; Colour = Color3.fromRGB(255, 115, 0)})
+                        elseif LocalCurrentKuraVersion.PatchNumber &lt; TriggerUpdate.PatchNumber then
+                            CreateWarning({Text = "A patch for Kura has been released. This update may provide additional stability."; Colour = Color3.fromRGB(255, 255, 255)})
+                        end
+                    else
+                        if LocalCurrentKuraVersion.MajorVersionNumber &lt; TriggerUpdate.MajorVersionNumber then
+                            CreateWarning({Text = "This version of Kura is outdated as a new major version has been released. Please ask the experience developer to update the version of Kura in this experience."; Colour = Color3.fromRGB(255, 0, 0)})
+                        end
+                    end
+                    return "Version " ..tostring(LocalCurrentKuraVersion.MajorVersionNumber) .."." ..tostring(LocalCurrentKuraVersion.MinorVersionNumber) .."." ..tostring(LocalCurrentKuraVersion.PatchNumber)
+                else
+                    CreateWarning({Text = "This version of Kura is unsupported as it is not an official Kura release."; Colour = Color3.fromRGB(255, 0, 0)})
+                    return "Version Dev"
+                end
+            end);
+            Font = Enum.Font.Gotham;
+            TextColor3 = WhiteState;
+            TextScaled = true;
+            LayoutOrder = 2;
+            Parent = AboutFrame;
+            [Fusion.Children] = {
+                CreateUICorner();
+                Fusion.New "UIPadding" {
+                    PaddingTop = UDim.new(0, 5);
+                    PaddingBottom = UDim.new(0, 5);
+                    PaddingLeft = UDim.new(0, 5);
+                    PaddingRight = UDim.new(0, 5);
+                }
+            }
+        };
+        local function License(props)
+            return Fusion.New "TextLabel" {
+                BackgroundColor3 = BlackState;
+                Size = UDim2.new(1, -10, 0, 30);
+                BorderSizePixel = 0;
+                Name = props.Name;
+                Text = props.Text;
+                Font = Enum.Font.Gotham;
+                TextColor3 = WhiteState;
+                TextSize = BODY_TEXT_SIZE;
+                AutomaticSize = Enum.AutomaticSize.Y;
+                TextXAlignment = Enum.TextXAlignment.Left;
+                TextScaled = true;
+                LayoutOrder = props.LayoutOrder;
+                Parent = AboutFrame;
+                [Fusion.Children] = {
+                    CreateUICorner();
+                    Fusion.New "UIPadding" {
+                        PaddingTop = UDim.new(0, 5);
+                        PaddingBottom = UDim.new(0, 5);
+                        PaddingLeft = UDim.new(0, 5);
+                        PaddingRight = UDim.new(0, 5);
+                    }
+                }
+            };
+        end
+        License({Name = "EoTMLicense"; Text = require(script.LICENSE), LayoutOrder = 4;})
+        License({Name = "FusionLicense"; Text = require(script.Fusion.LICENSE), LayoutOrder = 5;})
+        License({Name = "IconLicense"; Text = require(script.Icon.LICENSE), LayoutOrder = 6;})
+
+        local PlaceholderFrame, PlaceholderButton = CreateSection({Name = "placeholder"; Image = "";
+        })
+        PlaceholderButton:Destroy()
+        CurrentTab:set("placeholder")
+        Fusion.New "ImageLabel" {
+            Image = "rbxassetid://8167395582";
+            BackgroundTransparency = 1;
+            Size = UDim2.new(0.9, 0, 0.5, 0);
+            Position = UDim2.new(0.5, 0, 0.5, 0);
+            AnchorPoint = Vector2.new(0.5, 0.5);
+            ScaleType = Enum.ScaleType.Fit;
+            Parent = PlaceholderFrame;
+        }
     elseif CanUse == 2 then
         -- Student
-        local RaiseHandButton = Icon.new()
-        RaiseHandButton:setImage()
+        ExplorerKuraContainer.Visible = false
+        RaiseHandButton = Icon.new()
+        RaiseHandButton:setImage("8127902992")
         RaiseHandButton:setName("RaiseHand")
         RaiseHandButton:setTip("Raise Hand")
-        RaiseHandButton.selected:Connect(function()
-            ContainerPosition:set(UDim2.new(0.5, 0, 0, 5))
-        end)
-        RaiseHandButton.deselected:Connect(function()
-            ContainerPosition:set(UDim2.new(0.5, 0, -0.5, -30))
-        end)
+        RaiseHandButton.selected:Connect(function() end)
+        RaiseHandButton.deselected:Connect(function() end)
+
+    else
+        ExplorerKuraContainer.Visible = false
     end
-    local QuickActionArrays = KuraRF:InvokeServer({"QuickActions", "Request"})
 end
 
+-- Set up the announcement frames so everyone can see
+local FullScreenAnnouncementFrameAppearence = State(false)
+local FullScreenAnnouncementFrame = Fusion.New "Frame" {
+    Parent = ScreenGui;
+    ZIndex = 2003;
+    Visible = true;
+    BackgroundColor3 = BlackState;
+    BackgroundTransparency = Fusion.Computed(function()
+        if FullScreenAnnouncementFrameAppearence:get() then
+            return Fusion.Tween(State(0.3), TInfo):get()
+        else
+            return Fusion.Tween(State(1), TInfo):get()
+        end
+    end);
+    Size = UDim2.new(1,0,1,40);
+    Position = UDim2.new(0.5,0,0,-40);
+    AnchorPoint = Vector2.new(0.5,0);
+    [Fusion.Children] = {
+        Fusion.New "TextLabel" {
+            ZIndex = 2004;
+            Font = Enum.Font.GothamBlack;
+            TextColor3 = WhiteState;
+            BackgroundTransparency = 1;
+            Text = "EDUCATOR ANNOUNCEMENT";
+            Name = "Title";
+            AnchorPoint = Vector2.new(0.5,0);
+            Position = UDim2.new(0.5,0,0,35);
+            Size = UDim2.new(1,0,0, BODY_TEXT_SIZE);
+            TextScaled = true;
+            TextTransparency = Fusion.Computed(function()
+                if FullScreenAnnouncementFrameAppearence:get() then
+                    return Fusion.Tween(State(0), TInfo):get()
+                else
+                    return Fusion.Tween(State(1), TInfo):get()
+                end
+            end);
+        };
+        Fusion.New "TextLabel" {
+            ZIndex = 2004;
+            Font = Enum.Font.Gotham;
+            TextColor3 = WhiteState;
+            BackgroundTransparency = 1;
+            Text = "";
+            Name = "Message";
+            AnchorPoint = Vector2.new(0.5,0.5);
+            Position = UDim2.new(0.5,0,0.5,0);
+            Size = UDim2.new(1,0,0,30);
+            TextScaled = true;
+            TextTransparency = Fusion.Computed(function()
+                if FullScreenAnnouncementFrameAppearence:get() then
+                    return Fusion.Tween(State(0), TInfo):get()
+                else
+                    return Fusion.Tween(State(1), TInfo):get()
+                end
+            end);
+        };
+    };
+}
+
+local TopbarAnnouncementFrameAppearence = State(false)
+local TopbarAnnouncementFrame = Fusion.New "Frame" {
+    Parent = ScreenGui;
+    ZIndex = 2000;
+    Visible = true;
+    BackgroundColor3 = BlackState;
+    BackgroundTransparency = Fusion.Computed(function()
+        if TopbarAnnouncementFrameAppearence:get() then
+            return Fusion.Tween(State(0.3), TInfo):get()
+        else
+            return Fusion.Tween(State(1), TInfo):get()
+        end
+    end);
+    Size = Fusion.Computed(function()
+        if TopbarAnnouncementFrameAppearence:get() then
+            return Fusion.Tween(State(UDim2.new(1,0,0,30)), TInfo):get()
+        else
+            return Fusion.Tween(State(UDim2.new(1,0,0,0)), TInfo):get()
+        end
+    end);
+    Position = UDim2.new(0.5,0,0,5);
+    AnchorPoint = Vector2.new(0.5,0);
+    [Fusion.Children] = {
+        Fusion.New "TextLabel" {
+            ZIndex = 2001;
+            Font = Enum.Font.Gotham;
+            TextColor3 = WhiteState;
+            BackgroundTransparency = 1;
+            Text = "";
+            Name = "Message";
+            AnchorPoint = Vector2.new(0.5,0.5);
+            Position = UDim2.new(0.5,0,0.5,0);
+            Size = UDim2.new(1,0,0,21);
+            TextScaled = true;
+            TextSize = BODY_TEXT_SIZE;
+            TextYAlignment = Enum.TextYAlignment.Center;
+            TextXAlignment = Enum.TextXAlignment.Center;
+            TextTransparency = Fusion.Computed(function()
+                if TopbarAnnouncementFrameAppearence:get() then
+                    return Fusion.Tween(State(0), TInfo):get()
+                else
+                    return Fusion.Tween(State(1), TInfo):get()
+                end
+            end);
+        };
+    };
+}
+
 KuraRE.OnClientEvent:Connect(function(args)
+    print(args)
     if args[1] == "KuraSetup" then
+        CanUse = args[2]
         SetupKura(args[2])
+    elseif args[1] == "Mute" then
+        StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
+    elseif args[1] == "Unmute" then
+        StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)
+    elseif args[1] == "UpdateMuted" then
+        MutedPlayersState:set(args[2])
+    elseif args[1] == "Announcement" then
+        if args[2] == "Topbar Announcement" then
+            -- print("engaging topbar announcement")
+            if args[3]:len() == 0 then
+                TopbarAnnouncementFrameAppearence:set(false)
+            else
+                TopbarAnnouncementFrameAppearence:set(false)
+                TopbarAnnouncementFrame.Message.Text = args[3]
+                TopbarAnnouncementFrameAppearence:set(true)
+            end
+        elseif args[2] == "Full Screen Announcement" then
+            -- print("engaging FSA")
+            if args[3]:len() ~= 0 then
+                FullScreenAnnouncementFrameAppearence:set(false)
+                FullScreenAnnouncementFrame.Message.Text = args[3]
+                FullScreenAnnouncementFrameAppearence:set(true)
+                task.wait(FULL_SCREEN_ANNOUNCEMENT_WAIT)
+                if FullScreenAnnouncementFrameAppearence:get() then
+                    FullScreenAnnouncementFrameAppearence:set(false)
+                end
+            end
+        end
     end
 end)
 
@@ -318,11 +1302,9 @@ KuraRF.OnClientInvoke = function(args)
     
 end
 
-if CanUse then
-    SetupKura(CanUse)
-end</string>
+if CanUse then SetupKura(CanUse) end</string>
           </Properties>
-          <Item class="ModuleScript" referent="12">
+          <Item class="ModuleScript" referent="14">
             <Properties>
               <string name="Name">Fusion</string>
               <string name="Source">--[[
@@ -351,11 +1333,11 @@ return restrictRead("Fusion", {
 	Spring = require(script.Animation.Spring)
 })</string>
             </Properties>
-            <Item class="Folder" referent="13">
+            <Item class="Folder" referent="15">
               <Properties>
                 <string name="Name">Animation</string>
               </Properties>
-              <Item class="ModuleScript" referent="14">
+              <Item class="ModuleScript" referent="16">
                 <Properties>
                   <string name="Name">Spring</string>
                   <string name="Source">--[[
@@ -579,7 +1561,7 @@ end
 return Spring</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="15">
+              <Item class="ModuleScript" referent="17">
                 <Properties>
                   <string name="Name">SpringScheduler</string>
                   <string name="Source">--[[
@@ -718,7 +1700,7 @@ RunService:BindToRenderStep(
 return SpringScheduler</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="16">
+              <Item class="ModuleScript" referent="18">
                 <Properties>
                   <string name="Name">Tween</string>
                   <string name="Source">--[[
@@ -817,7 +1799,7 @@ end
 return Tween</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="17">
+              <Item class="ModuleScript" referent="19">
                 <Properties>
                   <string name="Name">TweenScheduler</string>
                   <string name="Source">--[[
@@ -896,7 +1878,7 @@ RunService:BindToRenderStep(
 return TweenScheduler</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="18">
+              <Item class="ModuleScript" referent="20">
                 <Properties>
                   <string name="Name">getTweenRatio</string>
                   <string name="Source">--[[
@@ -941,7 +1923,7 @@ end
 return getTweenRatio</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="19">
+              <Item class="ModuleScript" referent="21">
                 <Properties>
                   <string name="Name">lerpType</string>
                   <string name="Source">--[[
@@ -1085,7 +2067,7 @@ end
 return lerpType</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="20">
+              <Item class="ModuleScript" referent="22">
                 <Properties>
                   <string name="Name">packType</string>
                   <string name="Source">--[[
@@ -1180,7 +2162,7 @@ end
 return packType</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="21">
+              <Item class="ModuleScript" referent="23">
                 <Properties>
                   <string name="Name">springCoefficients</string>
                   <string name="Source">--[[
@@ -1301,7 +2283,7 @@ end
 return springCoefficients</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="22">
+              <Item class="ModuleScript" referent="24">
                 <Properties>
                   <string name="Name">unpackType</string>
                   <string name="Source">--[[
@@ -1385,11 +2367,11 @@ return unpackType</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="Folder" referent="23">
+            <Item class="Folder" referent="25">
               <Properties>
                 <string name="Name">Colour</string>
               </Properties>
-              <Item class="ModuleScript" referent="24">
+              <Item class="ModuleScript" referent="26">
                 <Properties>
                   <string name="Name">Oklab</string>
                   <string name="Source">--[[
@@ -1446,11 +2428,11 @@ return Oklab</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="Folder" referent="25">
+            <Item class="Folder" referent="27">
               <Properties>
                 <string name="Name">Dependencies</string>
               </Properties>
-              <Item class="ModuleScript" referent="26">
+              <Item class="ModuleScript" referent="28">
                 <Properties>
                   <string name="Name">captureDependencies</string>
                   <string name="Source">--[[
@@ -1520,7 +2502,7 @@ end
 return captureDependencies</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="27">
+              <Item class="ModuleScript" referent="29">
                 <Properties>
                   <string name="Name">initDependency</string>
                   <string name="Source">--[[
@@ -1551,7 +2533,7 @@ end
 return initDependency</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="28">
+              <Item class="ModuleScript" referent="30">
                 <Properties>
                   <string name="Name">sharedState</string>
                   <string name="Source">--[[
@@ -1580,7 +2562,7 @@ local sharedState: SharedState = {
 return sharedState</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="29">
+              <Item class="ModuleScript" referent="31">
                 <Properties>
                   <string name="Name">updateAll</string>
                   <string name="Source">--[[
@@ -1705,7 +2687,7 @@ end
 return updateAll</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="30">
+              <Item class="ModuleScript" referent="32">
                 <Properties>
                   <string name="Name">useDependency</string>
                   <string name="Source">--[[
@@ -1738,11 +2720,11 @@ return useDependency</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="Folder" referent="31">
+            <Item class="Folder" referent="33">
               <Properties>
                 <string name="Name">Instances</string>
               </Properties>
-              <Item class="ModuleScript" referent="32">
+              <Item class="ModuleScript" referent="34">
                 <Properties>
                   <string name="Name">Children</string>
                   <string name="Source">--[[
@@ -1756,7 +2738,7 @@ return {
 }</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="33">
+              <Item class="ModuleScript" referent="35">
                 <Properties>
                   <string name="Name">New</string>
                   <string name="Source">--[[
@@ -2106,7 +3088,7 @@ end
 return New</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="34">
+              <Item class="ModuleScript" referent="36">
                 <Properties>
                   <string name="Name">OnChange</string>
                   <string name="Source">--[[
@@ -2125,7 +3107,7 @@ end
 return OnChange</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="35">
+              <Item class="ModuleScript" referent="37">
                 <Properties>
                   <string name="Name">OnEvent</string>
                   <string name="Source">--[[
@@ -2144,7 +3126,7 @@ end
 return OnEvent</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="36">
+              <Item class="ModuleScript" referent="38">
                 <Properties>
                   <string name="Name">Scheduler</string>
                   <string name="Source">--[[
@@ -2231,7 +3213,7 @@ RunService:BindToRenderStep(
 return Scheduler</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="37">
+              <Item class="ModuleScript" referent="39">
                 <Properties>
                   <string name="Name">defaultProps</string>
                   <string name="Source">--[[
@@ -2344,11 +3326,19 @@ end</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="Folder" referent="38">
+            <Item class="ModuleScript" referent="40">
+              <Properties>
+                <string name="Name">LICENSE</string>
+                <string name="Source">local text = 'MIT License\nCopyright (c) 2021 Elttob\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.'
+
+return text</string>
+              </Properties>
+            </Item>
+            <Item class="Folder" referent="41">
               <Properties>
                 <string name="Name">Logging</string>
               </Properties>
-              <Item class="ModuleScript" referent="39">
+              <Item class="ModuleScript" referent="42">
                 <Properties>
                   <string name="Name">logError</string>
                   <string name="Source">--[[
@@ -2380,7 +3370,7 @@ end
 return logError</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="40">
+              <Item class="ModuleScript" referent="43">
                 <Properties>
                   <string name="Name">logErrorNonFatal</string>
                   <string name="Source">--[[
@@ -2414,7 +3404,7 @@ end
 return logErrorNonFatal</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="41">
+              <Item class="ModuleScript" referent="44">
                 <Properties>
                   <string name="Name">logWarn</string>
                   <string name="Source">--[[
@@ -2438,7 +3428,7 @@ end
 return logWarn</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="42">
+              <Item class="ModuleScript" referent="45">
                 <Properties>
                   <string name="Name">messages</string>
                   <string name="Source">--[[
@@ -2463,7 +3453,7 @@ return {
 }</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="43">
+              <Item class="ModuleScript" referent="46">
                 <Properties>
                   <string name="Name">parseError</string>
                   <string name="Source">--[[
@@ -2486,11 +3476,11 @@ return parseError</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="Folder" referent="44">
+            <Item class="Folder" referent="47">
               <Properties>
                 <string name="Name">State</string>
               </Properties>
-              <Item class="ModuleScript" referent="45">
+              <Item class="ModuleScript" referent="48">
                 <Properties>
                   <string name="Name">Compat</string>
                   <string name="Source">--[[
@@ -2568,7 +3558,7 @@ end
 return Compat</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="46">
+              <Item class="ModuleScript" referent="49">
                 <Properties>
                   <string name="Name">Computed</string>
                   <string name="Source">--[[
@@ -2667,7 +3657,7 @@ end
 return Computed</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="47">
+              <Item class="ModuleScript" referent="50">
                 <Properties>
                   <string name="Name">ComputedPairs</string>
                   <string name="Source">--[[
@@ -2891,7 +3881,7 @@ end
 return ComputedPairs</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="48">
+              <Item class="ModuleScript" referent="51">
                 <Properties>
                   <string name="Name">State</string>
                   <string name="Source">--[[
@@ -2959,7 +3949,7 @@ return State</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="ModuleScript" referent="49">
+            <Item class="ModuleScript" referent="52">
               <Properties>
                 <string name="Name">Types</string>
                 <string name="Source">--[[
@@ -3015,11 +4005,11 @@ export type Animatable =
 return nil</string>
               </Properties>
             </Item>
-            <Item class="Folder" referent="50">
+            <Item class="Folder" referent="53">
               <Properties>
                 <string name="Name">Utility</string>
               </Properties>
-              <Item class="ModuleScript" referent="51">
+              <Item class="ModuleScript" referent="54">
                 <Properties>
                   <string name="Name">None</string>
                   <string name="Source">--[[
@@ -3032,7 +4022,7 @@ return {
 }</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="52">
+              <Item class="ModuleScript" referent="55">
                 <Properties>
                   <string name="Name">cleanup</string>
                   <string name="Source">--[[
@@ -3090,7 +4080,7 @@ end
 return cleanup</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="53">
+              <Item class="ModuleScript" referent="56">
                 <Properties>
                   <string name="Name">cleanupOnDestroy</string>
                   <string name="Source">--[[
@@ -3213,7 +4203,7 @@ end
 return cleanupOnDestroy</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="54">
+              <Item class="ModuleScript" referent="57">
                 <Properties>
                   <string name="Name">cleanupOnDestroy_smart</string>
                   <string name="Source">--[[
@@ -3333,7 +4323,7 @@ end
 return cleanupOnDestroy</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="55">
+              <Item class="ModuleScript" referent="58">
                 <Properties>
                   <string name="Name">restrictRead</string>
                   <string name="Source">--[[
@@ -3363,7 +4353,7 @@ return restrictRead</string>
               </Item>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="56">
+          <Item class="ModuleScript" referent="59">
             <Properties>
               <string name="Name">Icon</string>
               <string name="Source">--[[ icon:header
@@ -5899,7 +6889,7 @@ Icon.Destroy = Icon.destroy -- an alias for you maid-using Pascal lovers
 
 return Icon</string>
             </Properties>
-            <Item class="ModuleScript" referent="57">
+            <Item class="ModuleScript" referent="60">
               <Properties>
                 <string name="Name">IconController</string>
                 <string name="Source">--[[ icon_controller:header
@@ -7078,7 +8068,15 @@ end)
 return IconController</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="58">
+            <Item class="ModuleScript" referent="61">
+              <Properties>
+                <string name="Name">LICENSE</string>
+                <string name="Source">local text = 'MIT License\n\nCopyright (c) 2021 Ben Horton\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: \n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.'
+
+return text</string>
+              </Properties>
+            </Item>
+            <Item class="ModuleScript" referent="62">
               <Properties>
                 <string name="Name">Maid</string>
                 <string name="Source">-- Maid
@@ -7237,7 +8235,7 @@ Maid.clean = Maid.doCleaning
 return Maid</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="59">
+            <Item class="ModuleScript" referent="63">
               <Properties>
                 <string name="Name">Signal</string>
                 <string name="Source">local HttpService = game:GetService("HttpService")
@@ -7351,7 +8349,7 @@ Signal.disconnect = Signal.Destroy
 return Signal</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="60">
+            <Item class="ModuleScript" referent="64">
               <Properties>
                 <string name="Name">Themes</string>
                 <string name="Source">-- Require all children and return their references
@@ -7363,7 +8361,7 @@ for _, module in pairs(script:GetChildren()) do
 end
 return Themes</string>
               </Properties>
-              <Item class="ModuleScript" referent="61">
+              <Item class="ModuleScript" referent="65">
                 <Properties>
                   <string name="Name">BlueGradient</string>
                   <string name="Source"><![CDATA[-- BlueGradient by ForeverHD
@@ -7410,7 +8408,7 @@ return {
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="62">
+              <Item class="ModuleScript" referent="66">
                 <Properties>
                   <string name="Name">Default</string>
                   <string name="Source">--[[
@@ -7540,7 +8538,7 @@ return {
                 </Properties>
               </Item>
             </Item>
-            <Item class="ModuleScript" referent="63">
+            <Item class="ModuleScript" referent="67">
               <Properties>
                 <string name="Name">TopbarPlusGui</string>
                 <string name="Source">-- SETUP ICON TEMPLATE
@@ -7885,7 +8883,7 @@ topbarPlusGui.Parent = playerGui
 return topbarPlusGui</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="64">
+            <Item class="ModuleScript" referent="68">
               <Properties>
                 <string name="Name">TopbarPlusReference</string>
                 <string name="Source">-- This module enables you to place Icon wherever you like within the data model while
@@ -7919,23 +8917,120 @@ end
 return TopbarPlusReference</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="65">
+            <Item class="ModuleScript" referent="69">
               <Properties>
                 <string name="Name">VERSION</string>
                 <string name="Source">-- v2.7.5</string>
               </Properties>
             </Item>
           </Item>
+          <Item class="ModuleScript" referent="70">
+            <Properties>
+              <string name="Name">LICENSE</string>
+              <string name="Source">local LICENSE = 'Thank you for using Explorer Kura, an Explorers of the Metaverse (division of Scratcher Studios) product. This product is licensed under the Apache Version 2.0 license, in which the developers of the experience have agreed to by inserting Kura into this experience. In addition, the licenses of Kuras dependencies are also included as per their license agreements. The license terms are as follows. \n\nCopyright 2021 Explorers of the Metaverse\n\nLicensed under the Apache License, Version 2.0 (the "License");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n[redacted]\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an "AS IS" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.'
+
+return LICENSE</string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="71">
+            <Properties>
+              <string name="Name">Locators</string>
+              <string name="Source">local obj = {}
+obj.__index = obj
+local Players = game:GetService("Players")
+local Fusion = require(script.Parent.Fusion)
+local Maid = require(script.Parent.Icon.Maid)
+
+function obj.New()
+    local self = table.create(Players.MaxPlayers)
+    self._maid = Maid.new()
+    local function OnPlayerAdded(player)
+        local function AddGui()
+                local rootpart = player.Character:FindFirstChild("HumanoidRootPart")
+                local BillboardGui = Fusion.New "BillboardGui" {
+                    Parent = rootpart;
+                    ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
+                    AlwaysOnTop = true;
+                    ClipsDescendants = true;
+                    LightInfluence = 0;
+                    Size = UDim2.fromOffset(150, 100);
+                    StudsOffsetWorldSpace = Vector3.new(0, 5, 0);
+                    Enabled = false;
+                    [Fusion.Children] = {
+                        Fusion.New "ImageLabel" {
+                            AnchorPoint = Vector2.new(0.5, 0);
+                            BackgroundColor3 = Color3.new(1, 1, 1);
+                            BackgroundTransparency = 1;
+                            Position = UDim2.fromScale(0.5, 0);
+                            Size = UDim2.fromScale(1, 0.75);
+                            Image = "rbxassetid://8127902577";
+                            ScaleType = Enum.ScaleType.Fit;
+                        };
+                        Fusion.New "TextLabel" {
+                            AnchorPoint = Vector2.new(0.5, 1);
+                            BackgroundColor3 = Color3.new(1, 1, 1);
+                            BackgroundTransparency = 1;
+                            Position = UDim2.fromScale(0.5, 1);
+                            Size = UDim2.fromScale(1, 0.25);
+                            Font = Enum.Font.GothamBold;
+                            TextColor3 = Color3.new(1, 1, 1);
+                            TextScaled = true;
+                            TextStrokeTransparency = 0;
+                            Text = player.Name;
+                        }
+                    };
+                }
+                self[player] = BillboardGui
+        end
+        if player.Character then
+            AddGui()
+        end
+    end
+    Players.PlayerAdded:Connect(OnPlayerAdded)
+    for _, player in pairs(Players:GetPlayers()) do
+        OnPlayerAdded(player)
+    end
+    setmetatable(self, obj)
+    return self
+end
+
+function obj:ShowLocator(player)
+    if self[player] then
+        self[player].Enabled = true
+    else
+        warn("unable to find player billboardgui")
+    end
+end
+
+function obj:HideLocator(player)
+    if self[player] then
+        self[player].Enabled = false
+    else
+        warn("unable to find player billboardgui")
+    end
+end
+
+function obj:GetPlayerLocatorStatus(player)
+    if self[player] then
+        return self[player].Enabled
+    else
+        return
+    end
+end
+
+return obj</string>
+            </Properties>
+          </Item>
         </Item>
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="66">
+  <Item class="Workspace" referent="72">
     <Properties>
       <string name="Name">Workspace</string>
       <bool name="FilteringEnabled">true</bool>
     </Properties>
-    <Item class="Part" referent="67">
+    <Item class="Part" referent="73">
       <Properties>
         <string name="Name">Baseplate</string>
         <bool name="Anchored">true</bool>

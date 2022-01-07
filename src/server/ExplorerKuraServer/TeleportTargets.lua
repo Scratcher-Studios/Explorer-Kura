@@ -1,0 +1,92 @@
+local obj = {}
+obj.__index = obj
+local Players = game:GetService("Players")
+local Maid = require(script.Parent.Maid)
+local TeleportObjTable = table.create(Players.MaxPlayers)
+
+local USE_PIVOTTO = false -- I'll work on this eventually
+
+local function Teleport(ToTeleport: Model, TeleportLocation: BasePart)
+    if not USE_PIVOTTO then
+        if not ToTeleport.PrimaryPart then
+            warn("Primary part is not set on the model. Check the Roblox DevHub for details to rectify.") -- In future versions, a bounding box part will be created and will be set as a primary part.
+        end
+        ToTeleport:MoveTo(TeleportLocation.Position)
+        print("teleported!")
+    else
+        error("PivotTo support is not implemented at this time, use Vector3 instead.")
+    end
+end
+
+function obj.New(Target)
+    local self = {}
+    self.Target = Target
+    self.__Maid = Maid.new()
+    if Target:IsA("BasePart") then
+        self.TargetPart = Target
+        self.Type = "Part"
+    elseif Players:GetPlayerFromCharacter(Target) or Target:IsA("Player") then
+        if Target:IsA("Player")  then
+            Target = Target.Character
+            self.Target = Target
+        end
+        if Target then
+            self.Type = "Player"
+            local Player = Players:GetPlayerFromCharacter(Target)
+            self.SpawnTargetPart = Player.RespawnLocation
+            self.__Maid.RespawnLocation = Player:GetPropertyChangedSignal("RespawnLocation"):Connect(function()
+                self.SpawnTargetPart = Target.RespawnLocation
+            end)
+            if Target:FindFirstChildWhichIsA("Humanoid") then
+                self.TargetPart = Target:FindFirstChild("HumanoidRootPart")
+                self.__Maid.CharacterAdded = Player.CharacterAdded:Connect(function(character)
+                    self.TargetPart = character:FindFirstChild("HumanoidRootPart")
+                    self.SpawnTargetPart = character.RespawnLocation
+                end)
+            end
+        else
+            warn("Character not detected!")
+            return
+        end
+    elseif Target:IsA("Model") then
+        self.TargetPart = Target
+        self.Type = "Model"
+    end
+    setmetatable(self, obj)
+    return self
+end
+
+function obj:TeleportTo(TeleportTarget: table)
+    -- Honestly I should do type checking here. But I have decided not to for laziness.
+    if self.Target:IsA("Model") then
+        if TeleportTarget then
+            if self.Type == "Player" then
+                if TeleportTarget.TargetPart then
+                    Teleport(self.Target, TeleportTarget.TargetPart)
+                    print("teleport to player")
+                else
+                    print("no targetpart!")
+                end
+            else
+                Teleport(self.Target, TeleportTarget.TargetPart)
+                print("teleport to player")
+            end
+        else
+            -- Assume teleport to spawn
+            print("teleport to spawn")
+            if self.Type == "Player" then
+                Teleport(self.Target, self.SpawnTargetPart)
+            end
+        end
+    elseif self.Target:IsA("BasePart") then
+        warn("Models only, no BaseParts!")
+    else
+        error("Unknown target type.")
+    end
+end
+
+function obj:Destroy()
+    self.__Maid = nil
+end
+
+return obj

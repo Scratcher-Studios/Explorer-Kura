@@ -16,29 +16,61 @@ Copyright 2022 Explorers of the Metaverse
 
 ]]
 
+--!strict
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GroupService = game:GetService("GroupService")
+local TextService = game:GetService("TextService")
 
 local TESTING_MODE = 1 -- Set to false or 0 to disable, or 1 for Educator or 2 for Student
-local PartyTable
+local PartyTable = table.create(Players.MaxPlayers)
 local Educator
+
+local PlayerTeleportTargets = table.create(Players.MaxPlayers)
+local TeleportTargets = require(script.TeleportTargets)
 
 local RE = Instance.new("RemoteEvent")
 RE.Name = "KuraRE"
 RE.Parent = ReplicatedStorage
 
-RE.OnServerEvent:Connect(function(player, command, arg)
-    
+RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
+    if player == Educator then
+        -- print(command, arg)
+        if command == "PlayerFrames" then
+            if typeof(arg.Action) == "string" then
+                if arg.Action == "TeleportTo" then
+                    if arg.Target then
+                        PlayerTeleportTargets[player]:TeleportTo(PlayerTeleportTargets[arg.Target])
+                    end
+                elseif arg.Action == "TeleportFrom" then
+                    if arg.Target then
+                        PlayerTeleportTargets[arg.Target]:TeleportTo(PlayerTeleportTargets[player])
+                    end
+                elseif arg.Action == "Mute" then
+                    RE:FireClient(arg.Player, {"Mute"})
+                elseif arg.Action == "Unmute" then
+                    RE:FireClient(arg.Player, {"Unmute"})
+                elseif arg.Action == "ShowLocator" then
+
+                elseif arg.Action == "HideLocator" then
+
+                else
+                    error("Action arg " ..arg.Action .." not found.")
+                end
+            end
+        end
+    end
 end)
 
 local RF = Instance.new("RemoteFunction")
 RF.Name = "KuraRF"
 RF.Parent = ReplicatedStorage
 
-RF.OnServerInvoke = function(player, command, arg)
+RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
     if command == "CanUseKura" then
         if typeof(TESTING_MODE) == "number" then
+            Educator = player
             return if TESTING_MODE == 0 then false else TESTING_MODE
         else
             if Educator == player then
@@ -48,6 +80,49 @@ RF.OnServerInvoke = function(player, command, arg)
             else
                 return
             end
+        end
+    elseif command == "LatestKuraVersion" then
+        return require(8169284660)
+    elseif command == "Announcement" then
+        if typeof(arg.AnnouncementType) == "string" then
+            local message: string
+            local success, errorString = pcall(function()
+                local MessageFilterResult = TextService:FilterStringAsync(arg.Message, player.UserId, Enum.TextFilterContext.PublicChat)
+                message = MessageFilterResult:GetNonChatStringForBroadcastAsync()
+            end)
+            if success then
+                -- print("filter success")
+                RE:FireAllClients({"Announcement", arg.AnnouncementType, message})
+                return 0
+            else
+                -- print("filter failure")
+                warn(errorString)
+                return 1
+            end
+        else
+            -- print("announcementtype not string")
+            return 1
+        end
+    elseif command == "QuickActions" then
+        if arg.ActionType == "RequestActionList" then
+            local QuickActionsTable = {}
+            for _, ModuleScript in pairs(script.QuickActions:GetChilren()) do
+                task.spawn(function()
+                    assert(ModuleScript:IsA("ModuleScript"), "Quick Action scripts must be a ModuleScript.")
+                    local QuickAction = require(ModuleScript)
+                    assert(typeof(QuickAction) == "table", "Quick Action module must return a table.")
+                    assert(typeof(QuickAction.Name) == "string", "Name of QuickAction must be a string.")
+                    if typeof(QuickAction.Image) ~= "string" then
+                        QuickAction.Image = "rbxassetid://8129843059" -- Default replacement image
+                        warn("Image is not a string.")
+                    end
+                    QuickAction.Script = ModuleScript
+                    QuickActionsTable[QuickAction.Name] = QuickAction
+                end)
+            end
+            return QuickActionsTable
+        elseif arg.ActionType == "InvokeServer" then
+
         end
     end
 end
@@ -64,7 +139,7 @@ local function UpdatePlayerPermissions(educator)
     end
 end
 
-local function PlayerJoinFunc(player)
+local function PlayerJoinFunc(player: Player)
     local PlayerJoinData = player:GetJoinData()
     if PlayerJoinData.SourcePlaceId == 2901715109 or PlayerJoinData.SourcePlaceId == 3088421028 then
         -- So they joined from an Explorer Place Id
@@ -86,6 +161,19 @@ local function PlayerJoinFunc(player)
             RE:Fire({"KuraSetup", 2})
         end
     end
+    coroutine.resume(coroutine.create(function()
+        local character = player.Character or player.CharacterAdded:Wait()
+        PlayerTeleportTargets[player] = TeleportTargets.New(player)
+        print("TeleportTarget added!")
+    end))
 end
 
 Players.PlayerAdded:Connect(PlayerJoinFunc)
+
+Players.PlayerRemoving:Connect(function(player)
+    PlayerTeleportTargets[player]:Destroy()
+end)
+
+for _, v in pairs(Players:GetPlayers()) do
+    PlayerJoinFunc(v)
+end

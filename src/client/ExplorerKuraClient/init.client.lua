@@ -49,6 +49,7 @@ local KuraRE = ReplicatedStorage:WaitForChild("KuraRE")
 local KuraRF = ReplicatedStorage:WaitForChild("KuraRF")
 
 local CanUse = KuraRF:InvokeServer("CanUseKura")
+
 local ButtonsToggled = {}
 
 if not CanUse then script:Destroy() end
@@ -65,7 +66,7 @@ local GreyState = State(Color3.fromRGB(30, 30, 30))
 local PlayerListState = State(Players:GetPlayers())
 local MutedPlayersState = State(table.create(Players.MaxPlayers))
 
-local LocatorLib = require(script.Locators)
+local LocatorLib = require(script.LocatorsClient)
 local Locators = LocatorLib.New()
 local LocatorShownState = State(table.create(Players.MaxPlayers))
 
@@ -434,13 +435,19 @@ local function SetupKura()
             CellPadding = UDim2.new(0,5,0,5);
             CellSize = UDim2.new(0.25,-10,0,30);
             StartCorner = Enum.StartCorner.TopLeft;
+            HorizontalAlignment = Enum.HorizontalAlignment.Center;
+            Parent = QuickActionsFrame;
         }
-        local QuickActionsArray = KuraRF:InvokeServer({"QuickActions", {ActionType = "RequestActionList"}})
-        local QuickActionButtons = Fusion.ComputedPairs(QuickActionsArray,
+        local QuickActionGridPadding = CreateUIPadding()
+        QuickActionGridPadding.Parent = QuickActionsFrame
+        local QuickActionsArray = KuraRF:InvokeServer("QuickActions", {ActionType = "RequestActionList"})
+        print(QuickActionsArray)
+        if QuickActionsArray then
+            local QuickActionButtons = Fusion.ComputedPairs(QuickActionsArray,
             -- Processor
             function(name: string, ActionTable)
-                local onState = State(false)
-                local button = Fusion.New "TextLabel" {
+                local onState = State(ActionTable.DefaultState or false)
+                local button = Fusion.New "TextButton" {
                     BackgroundColor3 = Fusion.Computed(function()
                         if onState:get() then
                             return Fusion.Tween(WhiteState, TInfo):get()
@@ -470,7 +477,7 @@ local function SetupKura()
                             end);
                             TextScaled = true;
                             TextColor3 = Fusion.Computed(function()
-                                if onState then
+                                if onState:get() then
                                     return Fusion.Tween(BlackState, TInfo):get()
                                 else
                                     return Fusion.Tween(WhiteState, TInfo):get()
@@ -479,8 +486,8 @@ local function SetupKura()
                             BackgroundTransparency = 1;
                             Font = Enum.Font.GothamSemibold;
                             AnchorPoint = Vector2.new(1,0.5);
-                            Position = UDim2.new(1,0,1,0);
-                            Size = UDim2.new(1,-30,0,1,0);
+                            Position = UDim2.new(1,0,0.5,0);
+                            Size = UDim2.new(1,-30,1,0);
                         };
                         Fusion.New "ImageLabel" {
                             Image = ActionTable.Image;
@@ -489,7 +496,7 @@ local function SetupKura()
                             Size = UDim2.new(1,0,1,0);
                             ScaleType = Enum.ScaleType.Fit;
                             ImageColor3 = Fusion.Computed(function()
-                                if onState then
+                                if onState:get() then
                                     return Fusion.Tween(BlackState, TInfo):get()
                                 else
                                     return Fusion.Tween(WhiteState, TInfo):get()
@@ -502,26 +509,29 @@ local function SetupKura()
                         CreateUICorner();
                     };
                     [Fusion.OnEvent("Activated")] = function()
-                        local OnStateResult: boolean, InvokeServer: boolean, FireServer: boolean = ActionTable.ClientFunction(onState:get())
+                        print(ActionTable)
+                        local Module = ReplicatedStorage.QuickActions:FindFirstChild(ActionTable.Script)
+                        print(Module)
+                        local Action = require(Module)
+                        local OnStateResult: boolean|nil, FireServer: any = Action.ClientFunction(onState:get())
                         if OnStateResult then
                             onState:set(OnStateResult)
                         end
-                        if InvokeServer then
-
-                        end
                         if FireServer then
-
+                            KuraRE:FireServer("QuickActions", {ActionTable.Script, FireServer})
                         end
                     end;
                 }
                 return button
             end,
-
             -- Destructor
             function(button)
                 button:Destroy()
             end
-        )
+            )
+        else
+            warn("No Quick Actions found.")
+        end
         
         -- Announcements Frame
         local function MessageBoxFrame(title, placeholder)
@@ -900,9 +910,9 @@ KuraRE.OnClientEvent:Connect(function(args)
         end
     end
 end)
-
+--[[
 KuraRF.OnClientInvoke = function(args)
-    
+    This is such a terrible idea. Never ever do this.
 end
-
+]]
 if CanUse then SetupKura(CanUse) end

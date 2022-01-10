@@ -19,22 +19,49 @@
     </Properties>
     <Item class="Folder" referent="2">
       <Properties>
-        <string name="Name">Common</string>
+        <string name="Name">QuickActions</string>
       </Properties>
+      <Item class="ModuleScript" referent="3">
+        <Properties>
+          <string name="Name">TestModule</string>
+          <string name="Source">local module = {}
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+module.FriendlyName = "hi"
+
+module.DefaultState = false
+
+module.Image = nil
+
+module.ClientFunction = function()
+    print("henlo")
+    return nil, nil
+end
+
+module.ServerEvent = function()
+
+end
+
+return module</string>
+        </Properties>
+      </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="3">
+  <Item class="ServerScriptService" referent="4">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="4">
+    <Item class="Folder" referent="5">
       <Properties>
         <string name="Name">Server</string>
       </Properties>
-      <Item class="Script" referent="5">
+      <Item class="Script" referent="6">
         <Properties>
           <string name="Name">ExplorerKuraServer</string>
-          <string name="Source">--[[
+          <string name="Source">--!strict
+
+--[[
 
 Copyright 2022 Explorers of the Metaverse
 
@@ -52,19 +79,48 @@ Copyright 2022 Explorers of the Metaverse
 
 ]]
 
---!strict
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GroupService = game:GetService("GroupService")
 local TextService = game:GetService("TextService")
 
-local TESTING_MODE = 1 -- Set to false or 0 to disable, or 1 for Educator or 2 for Student
+local TESTING_MODE:number = 1 -- Set to false or 0 to disable, or 1 for Educator or 2 for Student
 local PartyTable = table.create(Players.MaxPlayers)
 local Educator
 
 local PlayerTeleportTargets = table.create(Players.MaxPlayers)
 local TeleportTargets = require(script.TeleportTargets)
+local GetTeleportTargets = Instance.new("BindableFunction")
+GetTeleportTargets.Name = "GetTeleportTargets"
+GetTeleportTargets.Parent = script
+GetTeleportTargets.OnInvoke = function()
+    return TeleportTargets
+end
+
+local MutedPlayersModule = require(script.MutedPlayers)
+local MutedPlayers = table.create(Players.MaxPlayers)
+local GetMutedPlayers = Instance.new("BindableFunction")
+GetMutedPlayers.Name = "GetMutedPlayers"
+GetMutedPlayers.Parent = script
+GetMutedPlayers.OnInvoke = function()
+    return MutedPlayers
+end
+
+local QuickActionsServerEvents = {}
+
+local LocatorsModule = require(script.LocatorsServer)
+local Locators = table.create(Players.MaxPlayers)
+
+local function CopyDict(original)
+	local copy = {}
+	for k, v in pairs(original) do
+		if type(v) == "table" then
+			v = CopyDict(v)
+		end
+		copy[k] = v
+	end
+	return copy
+end
 
 local RE = Instance.new("RemoteEvent")
 RE.Name = "KuraRE"
@@ -84,15 +140,29 @@ RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
                         PlayerTeleportTargets[arg.Target]:TeleportTo(PlayerTeleportTargets[player])
                     end
                 elseif arg.Action == "Mute" then
-                    RE:FireClient(arg.Player, {"Mute"})
+                    MutedPlayers[player]:Mute()
                 elseif arg.Action == "Unmute" then
-                    RE:FireClient(arg.Player, {"Unmute"})
+                    MutedPlayers[player]:Unmute()
                 elseif arg.Action == "ShowLocator" then
-
+                    if player == Educator then
+                        Locators[player]:ShowLocator(true, Educator)
+                    else
+                        Locators[player]:ShowLocator(false, Educator)
+                    end
                 elseif arg.Action == "HideLocator" then
-
+                    if player == Educator then
+                        Locators[player]:HideLocator(true, Educator)
+                    else
+                        Locators[player]:HideLocator(false, Educator)
+                    end
                 else
                     error("Action arg " ..arg.Action .." not found.")
+                end
+            end
+        elseif command == "QuickActions" then
+            if typeof(arg) == "table" then
+                if QuickActionsServerEvents[arg[1]] then
+                    QuickActionsServerEvents[arg[1]](arg[2])
                 end
             end
         end
@@ -119,8 +189,8 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
         end
     elseif command == "LatestKuraVersion" then
         return require(8169284660)
-    elseif command =="Announcement" then
-        if typeof(arg.AnnouncementType) == "string" then
+    elseif command == "Announcement" then
+        if typeof(arg.AnnouncementType) == "string" and player == Educator then
             local message: string
             local success, errorString = pcall(function()
                 local MessageFilterResult = TextService:FilterStringAsync(arg.Message, player.UserId, Enum.TextFilterContext.PublicChat)
@@ -139,6 +209,39 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
             -- print("announcementtype not string")
             return 1
         end
+    elseif command == "QuickActions" and player == Educator then
+        if arg.ActionType == "RequestActionList" then
+            assert(game:GetService("ReplicatedStorage"):FindFirstChild("QuickActions"), "QuickActions not found.")
+            local QuickActionsTable = {}
+            for _, ModuleScript in ipairs(game:GetService("ReplicatedStorage").QuickActions:GetChildren()) do
+                task.spawn(function()
+                    assert(ModuleScript:IsA("ModuleScript"), "Quick Action scripts must be a ModuleScript.")
+                    local QuickAction = CopyDict(require(ModuleScript))
+                    assert(typeof(QuickAction) == "table", "Quick Action module must return a table.")
+                    -- assert(typeof(QuickAction.Name) == "string", "Name of QuickAction must be a string.") TODO rewrite
+                    if typeof(QuickAction.Image) ~= "string" then
+                        QuickAction.Image = "rbxassetid://8129843059" -- Default replacement image
+                        warn("Image is not a string.")
+                    end
+                    QuickAction.Script = ModuleScript.Name
+                    if typeof(QuickAction.ServerInvoke) == "function" then
+                        -- Not currently supported and probably never will be
+                    end
+                    if typeof(QuickAction.ServerEvent) == "function" then
+                        QuickActionsServerEvents[QuickAction.Script] = QuickAction.ServerEvent
+                    end
+                    assert(typeof(QuickAction.ClientFunction) == "function", "QuickAction nust pass through a client function.")
+                    if not typeof(QuickAction.DefaultState) == "boolean" then
+                        warn("Default state not set, automatically setting to false. Explicitly set default state to disable.")
+                    end
+                    QuickActionsTable[QuickAction.Script] = CopyDict(QuickAction)
+                end)
+            end
+            print(QuickActionsTable)
+            return QuickActionsTable
+        elseif arg.ActionType == "InvokeServer" then
+            -- Ignore
+        end
     end
 end
 
@@ -146,7 +249,7 @@ local function UpdatePlayerPermissions(educator)
     if PartyTable then
         for i, player in pairs(PartyTable) do
             if i == 1 then
-                
+                Educator = player
             end
         end
     else
@@ -177,9 +280,9 @@ local function PlayerJoinFunc(player: Player)
         end
     end
     coroutine.resume(coroutine.create(function()
+        MutedPlayers[player] = MutedPlayersModule.New(player)
         local character = player.Character or player.CharacterAdded:Wait()
         PlayerTeleportTargets[player] = TeleportTargets.New(player)
-        print("TeleportTarget added!")
     end))
 end
 
@@ -187,13 +290,63 @@ Players.PlayerAdded:Connect(PlayerJoinFunc)
 
 Players.PlayerRemoving:Connect(function(player)
     PlayerTeleportTargets[player]:Destroy()
+    MutedPlayers[player]:Destroy()
 end)
 
 for _, v in pairs(Players:GetPlayers()) do
     PlayerJoinFunc(v)
 end</string>
         </Properties>
-        <Item class="ModuleScript" referent="6">
+        <Item class="ModuleScript" referent="7">
+          <Properties>
+            <string name="Name">LocatorsServer</string>
+            <string name="Source">local obj = {}
+obj.__index = obj
+local Players = game:GetService("Players")
+local Maid = require(script.Parent.Maid)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local RE = ReplicatedStorage:WaitForChild("KuraRE")
+
+function obj.New(Target)
+    local self = {}
+    self.Target = Target
+    self.__Maid = Maid.new()
+
+    self.LocatorShown = false
+
+    setmetatable(self, obj)
+    return self
+end
+
+function obj:ShowLocator(isEducatorRequesting, educator)
+    if isEducatorRequesting then
+        RE:FireClient(obj.Target, {"ShowLocator"})
+    else
+        RE:FireClient(educator, {"ShowLocator", self.Target})
+    end
+    self.LocatorShown = true
+end
+
+function obj:HideLocator(isEducatorRequesting, educator)
+    if isEducatorRequesting then
+        RE:FireClient(obj.Target, {"HideLocator"})
+    else
+        RE:FireClient(educator, {"HideLocator", self.Target})
+    end
+    self.LocatorShown = false
+end
+
+function obj:Destroy()
+    self.__Maid = nil
+    obj = nil
+end
+
+return obj</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="8">
           <Properties>
             <string name="Name">Maid</string>
             <string name="Source">-- Maid
@@ -352,12 +505,48 @@ Maid.clean = Maid.doCleaning
 return Maid</string>
           </Properties>
         </Item>
-        <Item class="Folder" referent="7">
+        <Item class="ModuleScript" referent="9">
           <Properties>
-            <string name="Name">QuickActions</string>
+            <string name="Name">MutedPlayers</string>
+            <string name="Source">local obj = {}
+obj.__index = obj
+local Players = game:GetService("Players")
+local Maid = require(script.Parent.Maid)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local RE = ReplicatedStorage:WaitForChild("KuraRE")
+
+function obj.New(Target)
+    local self = {}
+    self.Target = Target
+    self.__Maid = Maid.new()
+
+    self.Muted = false
+
+    setmetatable(self, obj)
+    return self
+end
+
+function obj:Mute()
+    RE:FireClient(self.Target, {"Mute"})
+    self.Muted = true
+end
+
+function obj:Unmute()
+    self.Muted = false
+    RE:FireClient(self.Target, {"Unmute"})
+end
+
+function obj:Destroy()
+    self.__Maid = nil
+    obj = nil
+end
+
+return obj</string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="8">
+        <Item class="ModuleScript" referent="10">
           <Properties>
             <string name="Name">TeleportTargets</string>
             <string name="Source">local obj = {}
@@ -457,25 +646,25 @@ return obj</string>
       </Item>
     </Item>
   </Item>
-  <Item class="SoundService" referent="9">
+  <Item class="SoundService" referent="11">
     <Properties>
       <string name="Name">SoundService</string>
       <bool name="RespectFilteringEnabled">true</bool>
     </Properties>
   </Item>
-  <Item class="StarterPlayer" referent="10">
+  <Item class="StarterPlayer" referent="12">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="11">
+    <Item class="StarterPlayerScripts" referent="13">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="12">
+      <Item class="Folder" referent="14">
         <Properties>
           <string name="Name">Client</string>
         </Properties>
-        <Item class="LocalScript" referent="13">
+        <Item class="LocalScript" referent="15">
           <Properties>
             <string name="Name">ExplorerKuraClient</string>
             <string name="Source">--[[
@@ -545,9 +734,12 @@ local GreyState = State(Color3.fromRGB(30, 30, 30))
 local PlayerListState = State(Players:GetPlayers())
 local MutedPlayersState = State(table.create(Players.MaxPlayers))
 
-local LocatorLib = require(script.Locators)
+local LocatorLib = require(script.LocatorsClient)
 local Locators = LocatorLib.New()
 local LocatorShownState = State(table.create(Players.MaxPlayers))
+
+local QuickActionsEvents = {}
+local QuickActionsInvokes = {}
 
 local FULL_SCREEN_ANNOUNCEMENT_WAIT = 5
 local BODY_TEXT_SIZE = 11
@@ -562,8 +754,17 @@ local ScreenGui = Fusion.New "ScreenGui" {
 
 local function CreateUICorner()
     return Fusion.New "UICorner" {
-    CornerRadius = UDim.new(0, 5)
-};
+        CornerRadius = UDim.new(0, 5)
+    };
+end
+
+local function CreateUIPadding()
+    return Fusion.New "UIPadding" {
+        PaddingTop = UDim.new(0, 5);
+        PaddingBottom = UDim.new(0, 5);
+        PaddingLeft = UDim.new(0, 5);
+        PaddingRight = UDim.new(0, 5);
+    };
 end
 
 local ContainerPosition = State(UDim2.new(0.5, 0, -1, 0))
@@ -898,7 +1099,107 @@ local function SetupKura()
         end
     )
         -- Quick Actions Frame
-        local QuickActionsArray = KuraRF:InvokeServer({"QuickActions", "RequestActionList"})
+        Fusion.New "UIGridLayout" {
+            CellPadding = UDim2.new(0,5,0,5);
+            CellSize = UDim2.new(0.25,-10,0,30);
+            StartCorner = Enum.StartCorner.TopLeft;
+            HorizontalAlignment = Enum.HorizontalAlignment.Center;
+            Parent = QuickActionsFrame;
+        }
+        local QuickActionGridPadding = CreateUIPadding()
+        QuickActionGridPadding.Parent = QuickActionsFrame
+        local QuickActionsArray = KuraRF:InvokeServer("QuickActions", {ActionType = "RequestActionList"})
+        print(QuickActionsArray)
+        if QuickActionsArray then
+            local QuickActionButtons = Fusion.ComputedPairs(QuickActionsArray,
+            -- Processor
+            function(name: string, ActionTable)
+                local onState = State(ActionTable.DefaultState or false)
+                local button = Fusion.New "TextButton" {
+                    BackgroundColor3 = Fusion.Computed(function()
+                        if onState:get() then
+                            return Fusion.Tween(WhiteState, TInfo):get()
+                        else
+                            return Fusion.Tween(GreyState, TInfo):get()
+                        end
+                    end);
+                    Text = "";
+                    Parent = QuickActionsFrame;
+                    [Fusion.Children] = {
+                        Fusion.New "TextLabel" {
+                            Text = Fusion.Computed(function()
+                                if typeof(ActionTable.FriendlyName) == "string" then
+                                    return ActionTable.FriendlyName
+                                elseif typeof(ActionTable.FriendlyName) == "table" then
+                                    if onState:get() then
+                                        if typeof(ActionTable.FriendlyName[true]) == "string" then
+                                            return ActionTable.FriendlyName[true]
+                                        end
+                                    else
+                                        if typeof(ActionTable.FriendlyName[false]) == "string" then
+                                            return ActionTable.FriendlyName[false]
+                                        end
+                                    end
+                                end
+                                return name
+                            end);
+                            TextScaled = true;
+                            TextColor3 = Fusion.Computed(function()
+                                if onState:get() then
+                                    return Fusion.Tween(BlackState, TInfo):get()
+                                else
+                                    return Fusion.Tween(WhiteState, TInfo):get()
+                                end
+                            end);
+                            BackgroundTransparency = 1;
+                            Font = Enum.Font.GothamSemibold;
+                            AnchorPoint = Vector2.new(1,0.5);
+                            Position = UDim2.new(1,0,0.5,0);
+                            Size = UDim2.new(1,-30,1,0);
+                        };
+                        Fusion.New "ImageLabel" {
+                            Image = ActionTable.Image;
+                            BackgroundTransparency = 1;
+                            SizeConstraint = Enum.SizeConstraint.RelativeYY;
+                            Size = UDim2.new(1,0,1,0);
+                            ScaleType = Enum.ScaleType.Fit;
+                            ImageColor3 = Fusion.Computed(function()
+                                if onState:get() then
+                                    return Fusion.Tween(BlackState, TInfo):get()
+                                else
+                                    return Fusion.Tween(WhiteState, TInfo):get()
+                                end
+                            end);
+                            AnchorPoint = Vector2.new(0,0.5);
+                            Position = UDim2.new(0,0,0.5,0);
+                        };
+                        CreateUIPadding();
+                        CreateUICorner();
+                    };
+                    [Fusion.OnEvent("Activated")] = function()
+                        print(ActionTable)
+                        local Module = ReplicatedStorage.QuickActions:FindFirstChild(ActionTable.Script)
+                        print(Module)
+                        local Action = require(Module)
+                        local OnStateResult: boolean|nil, FireServer: any = Action.ClientFunction(onState:get())
+                        if OnStateResult then
+                            onState:set(OnStateResult)
+                        end
+                        if FireServer then
+                            KuraRE:FireServer("QuickActions", {ActionTable.Script, FireServer})
+                        end
+                    end;
+                }
+                return button
+            end,
+            -- Destructor
+            function(button)
+                button:Destroy()
+            end
+            )
+        else
+            warn("No Quick Actions found.")
+        end
         
         -- Announcements Frame
         local function MessageBoxFrame(title, placeholder)
@@ -969,12 +1270,7 @@ local function SetupKura()
                                 [Fusion.OnEvent("Activated")] = SendMessage;
                             };
                             CreateUICorner();
-                            Fusion.New "UIPadding" {
-                                PaddingTop = UDim.new(0, 5);
-                                PaddingBottom = UDim.new(0, 5);
-                                PaddingLeft = UDim.new(0, 5);
-                                PaddingRight = UDim.new(0, 5);
-                            };
+                            CreateUIPadding();
                         };
                         [Fusion.OnEvent("FocusLost")] = function(enterPressed)
                             if enterPressed then
@@ -985,19 +1281,14 @@ local function SetupKura()
                             MessageBoxState:set(text)
                         end
                     };
-                    Fusion.New "UIPadding" {
-                        PaddingTop = UDim.new(0, 5);
-                        PaddingBottom = UDim.new(0, 5);
-                        PaddingLeft = UDim.new(0, 5);
-                        PaddingRight = UDim.new(0, 5);
-                    };
+                    CreateUIPadding();
                 };
             }
             return AnnouncementTemplate
         end
         local BarFrame = MessageBoxFrame("Topbar Announcement", "Small message at the top of the screen. Leave this text box blank to clear.")
         BarFrame.Position = UDim2.new(0.5,0,0,0)
-        local FullScreenFrame = MessageBoxFrame("Full Screen Announcement", "Message that temporarily covers the whole screen for " ..tostring(FULL_SCREEN_ANNOUNCEMENT_WAIT) .." seconds. Leave this text box blank to clear.")
+        local FullScreenFrame = MessageBoxFrame("Full Screen Announcement", "Message that temporarily covers the whole screen for " ..tostring(FULL_SCREEN_ANNOUNCEMENT_WAIT) .." seconds.")
         FullScreenFrame.Position = UDim2.new(0.5,0,0.5,0)
         -- About Frame
         Fusion.New "UIListLayout" {
@@ -1089,12 +1380,7 @@ local function SetupKura()
             Parent = AboutFrame;
             [Fusion.Children] = {
                 CreateUICorner();
-                Fusion.New "UIPadding" {
-                    PaddingTop = UDim.new(0, 5);
-                    PaddingBottom = UDim.new(0, 5);
-                    PaddingLeft = UDim.new(0, 5);
-                    PaddingRight = UDim.new(0, 5);
-                }
+                CreateUIPadding();
             }
         };
         local function License(props)
@@ -1114,12 +1400,7 @@ local function SetupKura()
                 Parent = AboutFrame;
                 [Fusion.Children] = {
                     CreateUICorner();
-                    Fusion.New "UIPadding" {
-                        PaddingTop = UDim.new(0, 5);
-                        PaddingBottom = UDim.new(0, 5);
-                        PaddingLeft = UDim.new(0, 5);
-                        PaddingRight = UDim.new(0, 5);
-                    }
+                    CreateUIPadding();
                 }
             };
         end
@@ -1297,14 +1578,14 @@ KuraRE.OnClientEvent:Connect(function(args)
         end
     end
 end)
-
+--[[
 KuraRF.OnClientInvoke = function(args)
-    
+    This is such a terrible idea. Never ever do this.
 end
-
+]]
 if CanUse then SetupKura(CanUse) end</string>
           </Properties>
-          <Item class="ModuleScript" referent="14">
+          <Item class="ModuleScript" referent="16">
             <Properties>
               <string name="Name">Fusion</string>
               <string name="Source">--[[
@@ -1333,11 +1614,11 @@ return restrictRead("Fusion", {
 	Spring = require(script.Animation.Spring)
 })</string>
             </Properties>
-            <Item class="Folder" referent="15">
+            <Item class="Folder" referent="17">
               <Properties>
                 <string name="Name">Animation</string>
               </Properties>
-              <Item class="ModuleScript" referent="16">
+              <Item class="ModuleScript" referent="18">
                 <Properties>
                   <string name="Name">Spring</string>
                   <string name="Source">--[[
@@ -1561,7 +1842,7 @@ end
 return Spring</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="17">
+              <Item class="ModuleScript" referent="19">
                 <Properties>
                   <string name="Name">SpringScheduler</string>
                   <string name="Source">--[[
@@ -1700,7 +1981,7 @@ RunService:BindToRenderStep(
 return SpringScheduler</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="18">
+              <Item class="ModuleScript" referent="20">
                 <Properties>
                   <string name="Name">Tween</string>
                   <string name="Source">--[[
@@ -1799,7 +2080,7 @@ end
 return Tween</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="19">
+              <Item class="ModuleScript" referent="21">
                 <Properties>
                   <string name="Name">TweenScheduler</string>
                   <string name="Source">--[[
@@ -1878,7 +2159,7 @@ RunService:BindToRenderStep(
 return TweenScheduler</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="20">
+              <Item class="ModuleScript" referent="22">
                 <Properties>
                   <string name="Name">getTweenRatio</string>
                   <string name="Source">--[[
@@ -1923,7 +2204,7 @@ end
 return getTweenRatio</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="21">
+              <Item class="ModuleScript" referent="23">
                 <Properties>
                   <string name="Name">lerpType</string>
                   <string name="Source">--[[
@@ -2067,7 +2348,7 @@ end
 return lerpType</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="22">
+              <Item class="ModuleScript" referent="24">
                 <Properties>
                   <string name="Name">packType</string>
                   <string name="Source">--[[
@@ -2162,7 +2443,7 @@ end
 return packType</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="23">
+              <Item class="ModuleScript" referent="25">
                 <Properties>
                   <string name="Name">springCoefficients</string>
                   <string name="Source">--[[
@@ -2283,7 +2564,7 @@ end
 return springCoefficients</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="24">
+              <Item class="ModuleScript" referent="26">
                 <Properties>
                   <string name="Name">unpackType</string>
                   <string name="Source">--[[
@@ -2367,11 +2648,11 @@ return unpackType</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="Folder" referent="25">
+            <Item class="Folder" referent="27">
               <Properties>
                 <string name="Name">Colour</string>
               </Properties>
-              <Item class="ModuleScript" referent="26">
+              <Item class="ModuleScript" referent="28">
                 <Properties>
                   <string name="Name">Oklab</string>
                   <string name="Source">--[[
@@ -2428,11 +2709,11 @@ return Oklab</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="Folder" referent="27">
+            <Item class="Folder" referent="29">
               <Properties>
                 <string name="Name">Dependencies</string>
               </Properties>
-              <Item class="ModuleScript" referent="28">
+              <Item class="ModuleScript" referent="30">
                 <Properties>
                   <string name="Name">captureDependencies</string>
                   <string name="Source">--[[
@@ -2502,7 +2783,7 @@ end
 return captureDependencies</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="29">
+              <Item class="ModuleScript" referent="31">
                 <Properties>
                   <string name="Name">initDependency</string>
                   <string name="Source">--[[
@@ -2533,7 +2814,7 @@ end
 return initDependency</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="30">
+              <Item class="ModuleScript" referent="32">
                 <Properties>
                   <string name="Name">sharedState</string>
                   <string name="Source">--[[
@@ -2562,7 +2843,7 @@ local sharedState: SharedState = {
 return sharedState</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="31">
+              <Item class="ModuleScript" referent="33">
                 <Properties>
                   <string name="Name">updateAll</string>
                   <string name="Source">--[[
@@ -2687,7 +2968,7 @@ end
 return updateAll</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="32">
+              <Item class="ModuleScript" referent="34">
                 <Properties>
                   <string name="Name">useDependency</string>
                   <string name="Source">--[[
@@ -2720,11 +3001,11 @@ return useDependency</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="Folder" referent="33">
+            <Item class="Folder" referent="35">
               <Properties>
                 <string name="Name">Instances</string>
               </Properties>
-              <Item class="ModuleScript" referent="34">
+              <Item class="ModuleScript" referent="36">
                 <Properties>
                   <string name="Name">Children</string>
                   <string name="Source">--[[
@@ -2738,7 +3019,7 @@ return {
 }</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="35">
+              <Item class="ModuleScript" referent="37">
                 <Properties>
                   <string name="Name">New</string>
                   <string name="Source">--[[
@@ -3088,7 +3369,7 @@ end
 return New</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="36">
+              <Item class="ModuleScript" referent="38">
                 <Properties>
                   <string name="Name">OnChange</string>
                   <string name="Source">--[[
@@ -3107,7 +3388,7 @@ end
 return OnChange</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="37">
+              <Item class="ModuleScript" referent="39">
                 <Properties>
                   <string name="Name">OnEvent</string>
                   <string name="Source">--[[
@@ -3126,7 +3407,7 @@ end
 return OnEvent</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="38">
+              <Item class="ModuleScript" referent="40">
                 <Properties>
                   <string name="Name">Scheduler</string>
                   <string name="Source">--[[
@@ -3213,7 +3494,7 @@ RunService:BindToRenderStep(
 return Scheduler</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="39">
+              <Item class="ModuleScript" referent="41">
                 <Properties>
                   <string name="Name">defaultProps</string>
                   <string name="Source">--[[
@@ -3326,7 +3607,7 @@ end</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="ModuleScript" referent="40">
+            <Item class="ModuleScript" referent="42">
               <Properties>
                 <string name="Name">LICENSE</string>
                 <string name="Source">local text = 'MIT License\nCopyright (c) 2021 Elttob\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.'
@@ -3334,11 +3615,11 @@ end</string>
 return text</string>
               </Properties>
             </Item>
-            <Item class="Folder" referent="41">
+            <Item class="Folder" referent="43">
               <Properties>
                 <string name="Name">Logging</string>
               </Properties>
-              <Item class="ModuleScript" referent="42">
+              <Item class="ModuleScript" referent="44">
                 <Properties>
                   <string name="Name">logError</string>
                   <string name="Source">--[[
@@ -3370,7 +3651,7 @@ end
 return logError</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="43">
+              <Item class="ModuleScript" referent="45">
                 <Properties>
                   <string name="Name">logErrorNonFatal</string>
                   <string name="Source">--[[
@@ -3404,7 +3685,7 @@ end
 return logErrorNonFatal</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="44">
+              <Item class="ModuleScript" referent="46">
                 <Properties>
                   <string name="Name">logWarn</string>
                   <string name="Source">--[[
@@ -3428,7 +3709,7 @@ end
 return logWarn</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="45">
+              <Item class="ModuleScript" referent="47">
                 <Properties>
                   <string name="Name">messages</string>
                   <string name="Source">--[[
@@ -3453,7 +3734,7 @@ return {
 }</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="46">
+              <Item class="ModuleScript" referent="48">
                 <Properties>
                   <string name="Name">parseError</string>
                   <string name="Source">--[[
@@ -3476,11 +3757,11 @@ return parseError</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="Folder" referent="47">
+            <Item class="Folder" referent="49">
               <Properties>
                 <string name="Name">State</string>
               </Properties>
-              <Item class="ModuleScript" referent="48">
+              <Item class="ModuleScript" referent="50">
                 <Properties>
                   <string name="Name">Compat</string>
                   <string name="Source">--[[
@@ -3558,7 +3839,7 @@ end
 return Compat</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="49">
+              <Item class="ModuleScript" referent="51">
                 <Properties>
                   <string name="Name">Computed</string>
                   <string name="Source">--[[
@@ -3657,7 +3938,7 @@ end
 return Computed</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="50">
+              <Item class="ModuleScript" referent="52">
                 <Properties>
                   <string name="Name">ComputedPairs</string>
                   <string name="Source">--[[
@@ -3881,7 +4162,7 @@ end
 return ComputedPairs</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="51">
+              <Item class="ModuleScript" referent="53">
                 <Properties>
                   <string name="Name">State</string>
                   <string name="Source">--[[
@@ -3949,7 +4230,7 @@ return State</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="ModuleScript" referent="52">
+            <Item class="ModuleScript" referent="54">
               <Properties>
                 <string name="Name">Types</string>
                 <string name="Source">--[[
@@ -4005,11 +4286,11 @@ export type Animatable =
 return nil</string>
               </Properties>
             </Item>
-            <Item class="Folder" referent="53">
+            <Item class="Folder" referent="55">
               <Properties>
                 <string name="Name">Utility</string>
               </Properties>
-              <Item class="ModuleScript" referent="54">
+              <Item class="ModuleScript" referent="56">
                 <Properties>
                   <string name="Name">None</string>
                   <string name="Source">--[[
@@ -4022,7 +4303,7 @@ return {
 }</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="55">
+              <Item class="ModuleScript" referent="57">
                 <Properties>
                   <string name="Name">cleanup</string>
                   <string name="Source">--[[
@@ -4080,7 +4361,7 @@ end
 return cleanup</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="56">
+              <Item class="ModuleScript" referent="58">
                 <Properties>
                   <string name="Name">cleanupOnDestroy</string>
                   <string name="Source">--[[
@@ -4203,7 +4484,7 @@ end
 return cleanupOnDestroy</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="57">
+              <Item class="ModuleScript" referent="59">
                 <Properties>
                   <string name="Name">cleanupOnDestroy_smart</string>
                   <string name="Source">--[[
@@ -4323,7 +4604,7 @@ end
 return cleanupOnDestroy</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="58">
+              <Item class="ModuleScript" referent="60">
                 <Properties>
                   <string name="Name">restrictRead</string>
                   <string name="Source">--[[
@@ -4353,7 +4634,7 @@ return restrictRead</string>
               </Item>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="59">
+          <Item class="ModuleScript" referent="61">
             <Properties>
               <string name="Name">Icon</string>
               <string name="Source">--[[ icon:header
@@ -6889,7 +7170,7 @@ Icon.Destroy = Icon.destroy -- an alias for you maid-using Pascal lovers
 
 return Icon</string>
             </Properties>
-            <Item class="ModuleScript" referent="60">
+            <Item class="ModuleScript" referent="62">
               <Properties>
                 <string name="Name">IconController</string>
                 <string name="Source">--[[ icon_controller:header
@@ -8068,7 +8349,7 @@ end)
 return IconController</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="61">
+            <Item class="ModuleScript" referent="63">
               <Properties>
                 <string name="Name">LICENSE</string>
                 <string name="Source">local text = 'MIT License\n\nCopyright (c) 2021 Ben Horton\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: \n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.'
@@ -8076,7 +8357,7 @@ return IconController</string>
 return text</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="62">
+            <Item class="ModuleScript" referent="64">
               <Properties>
                 <string name="Name">Maid</string>
                 <string name="Source">-- Maid
@@ -8235,7 +8516,7 @@ Maid.clean = Maid.doCleaning
 return Maid</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="63">
+            <Item class="ModuleScript" referent="65">
               <Properties>
                 <string name="Name">Signal</string>
                 <string name="Source">local HttpService = game:GetService("HttpService")
@@ -8349,7 +8630,7 @@ Signal.disconnect = Signal.Destroy
 return Signal</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="64">
+            <Item class="ModuleScript" referent="66">
               <Properties>
                 <string name="Name">Themes</string>
                 <string name="Source">-- Require all children and return their references
@@ -8361,7 +8642,7 @@ for _, module in pairs(script:GetChildren()) do
 end
 return Themes</string>
               </Properties>
-              <Item class="ModuleScript" referent="65">
+              <Item class="ModuleScript" referent="67">
                 <Properties>
                   <string name="Name">BlueGradient</string>
                   <string name="Source"><![CDATA[-- BlueGradient by ForeverHD
@@ -8408,7 +8689,7 @@ return {
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="66">
+              <Item class="ModuleScript" referent="68">
                 <Properties>
                   <string name="Name">Default</string>
                   <string name="Source">--[[
@@ -8538,7 +8819,7 @@ return {
                 </Properties>
               </Item>
             </Item>
-            <Item class="ModuleScript" referent="67">
+            <Item class="ModuleScript" referent="69">
               <Properties>
                 <string name="Name">TopbarPlusGui</string>
                 <string name="Source">-- SETUP ICON TEMPLATE
@@ -8883,7 +9164,7 @@ topbarPlusGui.Parent = playerGui
 return topbarPlusGui</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="68">
+            <Item class="ModuleScript" referent="70">
               <Properties>
                 <string name="Name">TopbarPlusReference</string>
                 <string name="Source">-- This module enables you to place Icon wherever you like within the data model while
@@ -8917,14 +9198,14 @@ end
 return TopbarPlusReference</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="69">
+            <Item class="ModuleScript" referent="71">
               <Properties>
                 <string name="Name">VERSION</string>
                 <string name="Source">-- v2.7.5</string>
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="70">
+          <Item class="ModuleScript" referent="72">
             <Properties>
               <string name="Name">LICENSE</string>
               <string name="Source">local LICENSE = 'Thank you for using Explorer Kura, an Explorers of the Metaverse (division of Scratcher Studios) product. This product is licensed under the Apache Version 2.0 license, in which the developers of the experience have agreed to by inserting Kura into this experience. In addition, the licenses of Kuras dependencies are also included as per their license agreements. The license terms are as follows. \n\nCopyright 2021 Explorers of the Metaverse\n\nLicensed under the Apache License, Version 2.0 (the "License");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n[redacted]\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an "AS IS" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.'
@@ -8932,9 +9213,9 @@ return TopbarPlusReference</string>
 return LICENSE</string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="71">
+          <Item class="ModuleScript" referent="73">
             <Properties>
-              <string name="Name">Locators</string>
+              <string name="Name">LocatorsClient</string>
               <string name="Source">local obj = {}
 obj.__index = obj
 local Players = game:GetService("Players")
@@ -9025,12 +9306,12 @@ return obj</string>
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="72">
+  <Item class="Workspace" referent="74">
     <Properties>
       <string name="Name">Workspace</string>
       <bool name="FilteringEnabled">true</bool>
     </Properties>
-    <Item class="Part" referent="73">
+    <Item class="Part" referent="75">
       <Properties>
         <string name="Name">Baseplate</string>
         <bool name="Anchored">true</bool>

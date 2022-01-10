@@ -1,3 +1,5 @@
+--!strict
+
 --[[
 
 Copyright 2022 Explorers of the Metaverse
@@ -16,8 +18,6 @@ Copyright 2022 Explorers of the Metaverse
 
 ]]
 
---!strict
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GroupService = game:GetService("GroupService")
@@ -29,6 +29,37 @@ local Educator
 
 local PlayerTeleportTargets = table.create(Players.MaxPlayers)
 local TeleportTargets = require(script.TeleportTargets)
+local GetTeleportTargets = Instance.new("BindableFunction")
+GetTeleportTargets.Name = "GetTeleportTargets"
+GetTeleportTargets.Parent = script
+GetTeleportTargets.OnInvoke = function()
+    return TeleportTargets
+end
+
+local MutedPlayersModule = require(script.MutedPlayers)
+local MutedPlayers = table.create(Players.MaxPlayers)
+local GetMutedPlayers = Instance.new("BindableFunction")
+GetMutedPlayers.Name = "GetMutedPlayers"
+GetMutedPlayers.Parent = script
+GetMutedPlayers.OnInvoke = function()
+    return MutedPlayers
+end
+
+local QuickActionsServerEvents = table.create(5) -- 5 is just an arbritrary number that I chose. Probably should do this based on # of QuickActions
+
+local LocatorsModule = require(script.LocatorsServer)
+local Locators = table.create(Players.MaxPlayers)
+
+local function CopyDict(original)
+	local copy = {}
+	for k, v in pairs(original) do
+		if type(v) == "table" then
+			v = CopyDict(v)
+		end
+		copy[k] = v
+	end
+	return copy
+end
 
 local RE = Instance.new("RemoteEvent")
 RE.Name = "KuraRE"
@@ -48,20 +79,36 @@ RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
                         PlayerTeleportTargets[arg.Target]:TeleportTo(PlayerTeleportTargets[player])
                     end
                 elseif arg.Action == "Mute" then
-                    RE:FireClient(arg.Player, {"Mute"})
+                    MutedPlayers[player]:Mute()
                 elseif arg.Action == "Unmute" then
-                    RE:FireClient(arg.Player, {"Unmute"})
+                    MutedPlayers[player]:Unmute()
                 elseif arg.Action == "ShowLocator" then
-
+                    if player == Educator then
+                        Locators[player]:ShowLocator(true, Educator)
+                    else
+                        Locators[player]:ShowLocator(false, Educator)
+                    end
                 elseif arg.Action == "HideLocator" then
-
+                    if player == Educator then
+                        Locators[player]:HideLocator(true, Educator)
+                    else
+                        Locators[player]:HideLocator(false, Educator)
+                    end
                 else
                     error("Action arg " ..arg.Action .." not found.")
+                end
+            end
+        elseif command == "QuickActions" then
+            if typeof(arg) == "table" then
+                if QuickActionsServerEvents[arg[1]] then
+                    QuickActionsServerEvents[arg[1]](arg[2])
                 end
             end
         end
     end
 end)
+
+print("RE")
 
 local RF = Instance.new("RemoteFunction")
 RF.Name = "KuraRF"
@@ -84,7 +131,7 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
     elseif command == "LatestKuraVersion" then
         return require(8169284660)
     elseif command == "Announcement" then
-        if typeof(arg.AnnouncementType) == "string" then
+        if typeof(arg.AnnouncementType) == "string" and player == Educator then
             local message: string
             local success, errorString = pcall(function()
                 local MessageFilterResult = TextService:FilterStringAsync(arg.Message, player.UserId, Enum.TextFilterContext.PublicChat)
@@ -103,26 +150,38 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
             -- print("announcementtype not string")
             return 1
         end
-    elseif command == "QuickActions" then
+    elseif command == "QuickActions" and player == Educator then
         if arg.ActionType == "RequestActionList" then
+            assert(game:GetService("ReplicatedStorage"):FindFirstChild("QuickActions"), "QuickActions not found.")
             local QuickActionsTable = {}
-            for _, ModuleScript in pairs(script.QuickActions:GetChilren()) do
+            for _, ModuleScript in ipairs(game:GetService("ReplicatedStorage").QuickActions:GetChildren()) do
                 task.spawn(function()
                     assert(ModuleScript:IsA("ModuleScript"), "Quick Action scripts must be a ModuleScript.")
-                    local QuickAction = require(ModuleScript)
+                    local QuickAction = CopyDict(require(ModuleScript))
                     assert(typeof(QuickAction) == "table", "Quick Action module must return a table.")
-                    assert(typeof(QuickAction.Name) == "string", "Name of QuickAction must be a string.")
+                    -- assert(typeof(QuickAction.Name) == "string", "Name of QuickAction must be a string.") TODO rewrite
                     if typeof(QuickAction.Image) ~= "string" then
                         QuickAction.Image = "rbxassetid://8129843059" -- Default replacement image
                         warn("Image is not a string.")
                     end
-                    QuickAction.Script = ModuleScript
-                    QuickActionsTable[QuickAction.Name] = QuickAction
+                    QuickAction.Script = ModuleScript.Name
+                    if typeof(QuickAction.ServerInvoke) == "function" then
+                        -- Not currently supported and probably never will be
+                    end
+                    if typeof(QuickAction.ServerEvent) == "function" then
+                        QuickActionsServerEvents[QuickAction.Script] = QuickAction.ServerEvent
+                    end
+                    assert(typeof(QuickAction.ClientFunction) == "function", "QuickAction nust pass through a client function.")
+                    if not typeof(QuickAction.DefaultState) == "boolean" then
+                        warn("Default state not set, automatically setting to false. Explicitly set default state to disable.")
+                    end
+                    QuickActionsTable[QuickAction.Script] = CopyDict(QuickAction)
                 end)
             end
+            print(QuickActionsTable)
             return QuickActionsTable
         elseif arg.ActionType == "InvokeServer" then
-
+            -- Ignore
         end
     end
 end
@@ -131,7 +190,7 @@ local function UpdatePlayerPermissions(educator)
     if PartyTable then
         for i, player in pairs(PartyTable) do
             if i == 1 then
-                
+                Educator = player
             end
         end
     else
@@ -162,9 +221,10 @@ local function PlayerJoinFunc(player: Player)
         end
     end
     coroutine.resume(coroutine.create(function()
+        MutedPlayers[player] = MutedPlayersModule.New(player)
         local character = player.Character or player.CharacterAdded:Wait()
         PlayerTeleportTargets[player] = TeleportTargets.New(player)
-        print("TeleportTarget added!")
+        Locators[player] = LocatorsModule.New(player)
     end))
 end
 
@@ -172,6 +232,8 @@ Players.PlayerAdded:Connect(PlayerJoinFunc)
 
 Players.PlayerRemoving:Connect(function(player)
     PlayerTeleportTargets[player]:Destroy()
+    Locators[player]:Destroy()
+    MutedPlayers[player]:Destroy()
 end)
 
 for _, v in pairs(Players:GetPlayers()) do

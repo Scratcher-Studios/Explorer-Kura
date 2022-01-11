@@ -435,7 +435,6 @@ local function SetupKura()
             CellPadding = UDim2.new(0,5,0,5);
             CellSize = UDim2.new(0.25,-10,0,30);
             StartCorner = Enum.StartCorner.TopLeft;
-            HorizontalAlignment = Enum.HorizontalAlignment.Center;
             Parent = QuickActionsFrame;
         }
         local QuickActionGridPadding = CreateUIPadding()
@@ -591,7 +590,7 @@ local function SetupKura()
                                 AutoButtonColor = true;
                                 BackgroundColor3 = Fusion.Computed(function()
                                     if SuccessState:get() == 2 then
-                                        return  Fusion.Tween(WhiteState, TInfo):get()
+                                        return Fusion.Tween(WhiteState, TInfo):get()
                                     elseif SuccessState:get() == 0 then
                                         return Fusion.Tween(State(Color3.fromRGB(0,200,0)), TInfo):get()
                                     elseif SuccessState:get() == 1 then

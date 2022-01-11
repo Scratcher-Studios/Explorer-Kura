@@ -10,10 +10,10 @@ module.Image = nil
 
 module.ClientFunction = function()
     print("henlo")
-    return nil, nil
+    return nil, nil -- OnStateResult, FireServer
 end
 
-module.ServerEvent = function()
+module.ServerEvent = function(player, args)
 
 end
 

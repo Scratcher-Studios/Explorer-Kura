@@ -101,7 +101,7 @@ RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
         elseif command == "QuickActions" then
             if typeof(arg) == "table" then
                 if QuickActionsServerEvents[arg[1]] then
-                    QuickActionsServerEvents[arg[1]](arg[2])
+                    QuickActionsServerEvents[arg[1]](player, arg[2])
                 end
             end
         end

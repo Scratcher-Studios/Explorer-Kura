@@ -144,7 +144,7 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
         if arg.ActionType == "RequestActionList" then
             assert(game:GetService("ReplicatedStorage"):FindFirstChild("QuickActions"), "QuickActions not found.")
             local QuickActionsTable = {}
-            for _, ModuleScript in ipairs(game:GetService("ReplicatedStorage").QuickActions:GetChildren()) do
+            for _, ModuleScript in ipairs(ReplicatedStorage.ExplorerKuraQuickActions:GetChildren()) do
                 task.spawn(function()
                     assert(ModuleScript:IsA("ModuleScript"), "Quick Action scripts must be a ModuleScript.")
                     local QuickAction = CopyDict(require(ModuleScript))

@@ -464,7 +464,7 @@ local function SetupKura()
                                 if typeof(ActionTable.FriendlyName) == "string" then
                                     return ActionTable.FriendlyName
                                 elseif typeof(ActionTable.FriendlyName) == "table" then
-                                    local module = require(ReplicatedStorage:WaitForChild("QuickActions"):FindFirstChild(ActionTable.Script))
+                                    local module = require(ReplicatedStorage.ExplorerKuraQuickActions:FindFirstChild(ActionTable.Script))
                                     if onState:get() then
                                         if typeof(module.FriendlyName[true]) == "string" then
                                             return module.FriendlyName[true]
@@ -512,7 +512,7 @@ local function SetupKura()
                     };
                     [Fusion.OnEvent("Activated")] = function()
                         print(ActionTable)
-                        local Module = ReplicatedStorage.QuickActions:FindFirstChild(ActionTable.Script)
+                        local Module = ReplicatedStorage.ExplorerKuraQuickActions:FindFirstChild(ActionTable.Script)
                         print(Module)
                         local Action = require(Module)
                         local OnStateResult: boolean|nil, FireServer: any = Action.ClientFunction(onState:get())

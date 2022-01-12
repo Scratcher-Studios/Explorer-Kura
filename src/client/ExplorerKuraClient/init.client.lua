@@ -464,17 +464,18 @@ local function SetupKura()
                                 if typeof(ActionTable.FriendlyName) == "string" then
                                     return ActionTable.FriendlyName
                                 elseif typeof(ActionTable.FriendlyName) == "table" then
+                                    local module = require(ReplicatedStorage:WaitForChild("QuickActions"):FindFirstChild(ActionTable.Script))
                                     if onState:get() then
-                                        if typeof(ActionTable.FriendlyName[true]) == "string" then
-                                            return ActionTable.FriendlyName[true]
+                                        if typeof(module.FriendlyName[true]) == "string" then
+                                            return module.FriendlyName[true]
                                         end
                                     else
-                                        if typeof(ActionTable.FriendlyName[false]) == "string" then
-                                            return ActionTable.FriendlyName[false]
+                                        if typeof(module.FriendlyName[false]) == "string" then
+                                            return module.FriendlyName[false]
                                         end
                                     end
                                 end
-                                return name
+                                return ActionTable.Script
                             end);
                             TextScaled = true;
                             TextColor3 = Fusion.Computed(function()
@@ -515,7 +516,7 @@ local function SetupKura()
                         print(Module)
                         local Action = require(Module)
                         local OnStateResult: boolean|nil, FireServer: any = Action.ClientFunction(onState:get())
-                        if OnStateResult then
+                        if typeof(OnStateResult) == "boolean" then
                             onState:set(OnStateResult)
                         end
                         if FireServer then

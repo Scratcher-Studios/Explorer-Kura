@@ -1089,17 +1089,18 @@ local function SetupKura()
                                 if typeof(ActionTable.FriendlyName) == "string" then
                                     return ActionTable.FriendlyName
                                 elseif typeof(ActionTable.FriendlyName) == "table" then
+                                    local module = require(ReplicatedStorage:WaitForChild("QuickActions"):FindFirstChild(ActionTable.Script))
                                     if onState:get() then
-                                        if typeof(ActionTable.FriendlyName[true]) == "string" then
-                                            return ActionTable.FriendlyName[true]
+                                        if typeof(module.FriendlyName[true]) == "string" then
+                                            return module.FriendlyName[true]
                                         end
                                     else
-                                        if typeof(ActionTable.FriendlyName[false]) == "string" then
-                                            return ActionTable.FriendlyName[false]
+                                        if typeof(module.FriendlyName[false]) == "string" then
+                                            return module.FriendlyName[false]
                                         end
                                     end
                                 end
-                                return name
+                                return ActionTable.Script
                             end);
                             TextScaled = true;
                             TextColor3 = Fusion.Computed(function()
@@ -1139,8 +1140,8 @@ local function SetupKura()
                         local Module = ReplicatedStorage.QuickActions:FindFirstChild(ActionTable.Script)
                         print(Module)
                         local Action = require(Module)
-                        local OnStateResult, FireServer: any = Action.ClientFunction(onState:get())
-                        if OnStateResult then
+                        local OnStateResult: boolean|nil, FireServer: any = Action.ClientFunction(onState:get())
+                        if typeof(OnStateResult) == "boolean" then
                             onState:set(OnStateResult)
                         end
                         if FireServer then
@@ -10025,6 +10026,8 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
                     assert(typeof(QuickAction) == "table", "Quick Action module must return a table.")
                     if typeof(QuickAction.FriendlyName) == "table" then
                         assert(typeof(QuickAction.FriendlyName[true]) == "string" and typeof(QuickAction.FriendlyName[false]) == "string", "QuickAction must have strings for both true and false states of FriendlyName.")
+                        -- Bit of a weird fix but Remotes are weird like that
+                        QuickAction.FriendlyName = {}
                     else
                         assert(typeof(QuickAction.FriendlyName) == "string", "FriendlyName of QuickAction must be a string.")
                     end
@@ -10611,15 +10614,18 @@ return module]]></ProtectedString>
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-module.FriendlyName = "hi"
+module.FriendlyName = {[true] = "On"; [false] = "Off"}
 
 module.DefaultState = false
 
 module.Image = nil
 
-module.ClientFunction = function()
-    print("henlo")
-    return nil, nil -- OnStateResult, FireServer
+module.ClientFunction = function(onState)
+    if onState then
+        return false, nil -- OnStateResult, FireServer
+    else
+        return true, nil -- OnStateResult, FireServer
+    end
 end
 
 module.ServerEvent = function(player, args)

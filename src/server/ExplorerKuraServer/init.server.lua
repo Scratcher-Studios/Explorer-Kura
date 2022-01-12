@@ -151,6 +151,8 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
                     assert(typeof(QuickAction) == "table", "Quick Action module must return a table.")
                     if typeof(QuickAction.FriendlyName) == "table" then
                         assert(typeof(QuickAction.FriendlyName[true]) == "string" and typeof(QuickAction.FriendlyName[false]) == "string", "QuickAction must have strings for both true and false states of FriendlyName.")
+                        -- Bit of a weird fix but Remotes are weird like that
+                        QuickAction.FriendlyName = {}
                     else
                         assert(typeof(QuickAction.FriendlyName) == "string", "FriendlyName of QuickAction must be a string.")
                     end

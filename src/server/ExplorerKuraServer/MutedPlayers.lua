@@ -1,3 +1,7 @@
+--[[
+    Muted players module. Licensed with Apache Version 2.0. See LICENSE for details. (c) 2022 Explorers of the Metaverse
+]]
+
 local obj = {}
 obj.__index = obj
 

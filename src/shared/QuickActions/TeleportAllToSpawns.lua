@@ -1,3 +1,7 @@
+--[[
+    Teleports all to their spawns. Licensed with Apache Version 2.0. See LICENSE for details. (c) 2022 Explorers of the Metaverse
+]]
+
 local module = {}
 
 local ServerStorage = game:GetService("ServerStorage")

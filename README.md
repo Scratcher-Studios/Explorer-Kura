@@ -12,8 +12,10 @@ Coming in v0.2.0.
 
 Only trust models released by EcoScratcher (with a verified shield next to the username) or models released by the Explorers of the Metaverse group.
 
+The model contains an installation script which will install Kura into your experience. Copy and paste the script into the Roblox Studio command bar to install Kura.
+
 ## Releases Page
-Visit the Releases page to get a .rbxm file containing an installation script which will install Kura in your workspace.
+Visit the Releases page to get a .rbxm file containing an installation script which will install Kura into your experience. Copy and paste the script into the Roblox Studio command bar to install Kura.
 
 # Features
 - Nice to use interface

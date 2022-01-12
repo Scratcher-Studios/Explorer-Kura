@@ -244,7 +244,7 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
         end
     elseif command == "QuickActions" and player == Educator then
         if arg.ActionType == "RequestActionList" then
-            assert(game:GetService("ReplicatedStorage"):FindFirstChild("QuickActions"), "QuickActions not found.")
+            assert(ReplicatedStorage:FindFirstChild("ExplorerKuraQuickActions"), "QuickActions not found.")
             local QuickActionsTable = {}
             for _, ModuleScript in ipairs(ReplicatedStorage.ExplorerKuraQuickActions:GetChildren()) do
                 task.spawn(function()

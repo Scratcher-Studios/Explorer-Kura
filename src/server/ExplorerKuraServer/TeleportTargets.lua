@@ -33,10 +33,6 @@ function obj.New(Target)
         if Target then
             self.Type = "Player"
             local Player = Players:GetPlayerFromCharacter(Target)
-            self.SpawnTargetPart = Player.RespawnLocation
-            self.__Maid.RespawnLocation = Player:GetPropertyChangedSignal("RespawnLocation"):Connect(function()
-                self.SpawnTargetPart = Target.RespawnLocation
-            end)
             if Target:FindFirstChildWhichIsA("Humanoid") then
                 self.TargetPart = Target:FindFirstChild("HumanoidRootPart")
                 self.__Maid.CharacterAdded = Player.CharacterAdded:Connect(function(character)
@@ -75,11 +71,20 @@ function obj:TeleportTo(TeleportTarget: table)
             -- Assume teleport to spawn
             print("teleport to spawn")
             if self.Type == "Player" then
-                Teleport(self.Target, self.SpawnTargetPart)
+                -- TODO teleport to spawn logic
+                local player = Players:GetPlayerFromCharacter(self.Target)
+                if player.RespawnLocation then
+                    Teleport(self.Target, player.RespawnLocation)
+                else
+                    local SpawnLocation = workspace:FindFirstChildWhichIsA("SpawnLocation", true)
+                    if SpawnLocation then
+                        Teleport(self.Target, SpawnLocation)
+                    end
+                end
             end
         end
     elseif self.Target:IsA("BasePart") then
-        warn("Models only, no BaseParts!")
+        warn("Models only, no BaseParts.")
     else
         error("Unknown target type.")
     end

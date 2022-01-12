@@ -27,11 +27,15 @@ local TESTING_MODE = 1 -- Set to false or 0 to disable, or 1 for Educator or 2 f
 local PartyTable = table.create(Players.MaxPlayers)
 local Educator
 
-local PlayerTeleportTargets = table.create(Players.MaxPlayers)
+local ExplorerGetters = Instance.new("Folder")
+ExplorerGetters.Name = "ExplorerFunctions"
+ExplorerGetters.Parent = game:GetService("ServerStorage")
+
 local TeleportTargets = require(script.TeleportTargets)
+local PlayerTeleportTargets = table.create(Players.MaxPlayers)
 local GetTeleportTargets = Instance.new("BindableFunction")
 GetTeleportTargets.Name = "GetTeleportTargets"
-GetTeleportTargets.Parent = script
+GetTeleportTargets.Parent = ExplorerGetters
 GetTeleportTargets.OnInvoke = function()
     return TeleportTargets
 end
@@ -40,7 +44,7 @@ local MutedPlayersModule = require(script.MutedPlayers)
 local MutedPlayers = table.create(Players.MaxPlayers)
 local GetMutedPlayers = Instance.new("BindableFunction")
 GetMutedPlayers.Name = "GetMutedPlayers"
-GetMutedPlayers.Parent = script
+GetMutedPlayers.Parent = ExplorerGetters
 GetMutedPlayers.OnInvoke = function()
     return MutedPlayers
 end
@@ -82,18 +86,6 @@ RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
                     MutedPlayers[player]:Mute()
                 elseif arg.Action == "Unmute" then
                     MutedPlayers[player]:Unmute()
-                elseif arg.Action == "ShowLocator" then
-                    if player == Educator then
-                        Locators[player]:ShowLocator(true, Educator)
-                    else
-                        Locators[player]:ShowLocator(false, Educator)
-                    end
-                elseif arg.Action == "HideLocator" then
-                    if player == Educator then
-                        Locators[player]:HideLocator(true, Educator)
-                    else
-                        Locators[player]:HideLocator(false, Educator)
-                    end
                 else
                     error("Action arg " ..arg.Action .." not found.")
                 end
@@ -101,14 +93,12 @@ RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
         elseif command == "QuickActions" then
             if typeof(arg) == "table" then
                 if QuickActionsServerEvents[arg[1]] then
-                    QuickActionsServerEvents[arg[1]](player, arg[2])
+                    QuickActionsServerEvents[arg[1]](player, {["TeleportTargets"] = PlayerTeleportTargets; ["MutedPlayers"] = MutedPlayers; ["Locators"] = Locators;},arg[2])
                 end
             end
         end
     end
 end)
-
-print("RE")
 
 local RF = Instance.new("RemoteFunction")
 RF.Name = "KuraRF"
@@ -159,7 +149,11 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
                     assert(ModuleScript:IsA("ModuleScript"), "Quick Action scripts must be a ModuleScript.")
                     local QuickAction = CopyDict(require(ModuleScript))
                     assert(typeof(QuickAction) == "table", "Quick Action module must return a table.")
-                    -- assert(typeof(QuickAction.Name) == "string", "Name of QuickAction must be a string.") TODO rewrite
+                    if typeof(QuickAction.FriendlyName) == "table" then
+                        assert(typeof(QuickAction.FriendlyName[true]) == "string" and typeof(QuickAction.FriendlyName[false]) == "string", "QuickAction must have strings for both true and false states of FriendlyName.")
+                    else
+                        assert(typeof(QuickAction.FriendlyName) == "string", "FriendlyName of QuickAction must be a string.")
+                    end
                     if typeof(QuickAction.Image) ~= "string" then
                         QuickAction.Image = "rbxassetid://8129843059" -- Default replacement image
                         warn("Image is not a string.")

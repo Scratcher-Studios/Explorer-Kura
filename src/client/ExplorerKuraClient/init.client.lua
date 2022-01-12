@@ -50,6 +50,8 @@ local KuraRF = ReplicatedStorage:WaitForChild("KuraRF")
 
 local CanUse = KuraRF:InvokeServer("CanUseKura")
 
+local LocalPlayer = Players.LocalPlayer
+
 local ButtonsToggled = {}
 
 if not CanUse then script:Destroy() end
@@ -81,7 +83,7 @@ local ScreenGui = Fusion.New "ScreenGui" {
     IgnoreGuiInset = false;
     Name = "ExplorerKuraGui";
     Enabled = true;
-    Parent = Players.LocalPlayer.PlayerGui
+    Parent = LocalPlayer.PlayerGui
 }
 
 local function CreateUICorner()
@@ -433,7 +435,7 @@ local function SetupKura()
         -- Quick Actions Frame
         Fusion.New "UIGridLayout" {
             CellPadding = UDim2.new(0,5,0,5);
-            CellSize = UDim2.new(0.25,-10,0,30);
+            CellSize = UDim2.new(0.25,0,0,50);
             StartCorner = Enum.StartCorner.TopLeft;
             Parent = QuickActionsFrame;
         }
@@ -486,7 +488,7 @@ local function SetupKura()
                             Font = Enum.Font.GothamSemibold;
                             AnchorPoint = Vector2.new(1,0.5);
                             Position = UDim2.new(1,0,0.5,0);
-                            Size = UDim2.new(1,-30,1,0);
+                            Size = UDim2.new(1,-50,1,0);
                         };
                         Fusion.New "ImageLabel" {
                             Image = ActionTable.Image;
@@ -684,7 +686,7 @@ local function SetupKura()
                     }
                 end
                 if typeof(LocalCurrentKuraVersion) == "table" and LocalCurrentKuraVersion.MajorVersionNumber and LocalCurrentKuraVersion.MinorVersionNumber and LocalCurrentKuraVersion.PatchNumber then
-                    if (game.CreatorType == Enum.CreatorType.User and game.CreatorId == Players.LocalPlayer.UserId) or (game.CreatorType == Enum.CreatorType.Group and GroupService:GetGroupInfoAsync(game.CreatorId).Owner.Id == Players.LocalPlayer.UserId) then
+                    if (game.CreatorType == Enum.CreatorType.User and game.CreatorId == LocalPlayer.UserId) or (game.CreatorType == Enum.CreatorType.Group and GroupService:GetGroupInfoAsync(game.CreatorId).Owner.Id == LocalPlayer.UserId) then
                         -- Game developer
                         if LocalCurrentKuraVersion.MajorVersionNumber < TriggerUpdate.MajorVersionNumber then
                             CreateWarning({Text = "This version of Kura is outdated as a new major version has been released. Please update your Kura module now."; Colour = Color3.fromRGB(255, 0, 0)})
@@ -907,6 +909,30 @@ KuraRE.OnClientEvent:Connect(function(args)
                 end
             end
         end
+    elseif args[1] == "ShowLocator" then
+        local LocatorsTable = LocatorShownState:get()
+        if args[2] then
+            Locators:ShowLocator(args[2])
+            table.insert(LocatorsTable, args[2])
+        else
+            Locators:ShowLocator(LocalPlayer)
+            table.insert(LocatorsTable, LocalPlayer)
+        end
+        LocatorShownState:set(CopyDict(LocatorsTable))
+    elseif args[2] == "HideLocator" then
+        local LocatorsTable = LocatorShownState:get()
+        if args[2] then
+            Locators:ShowLocator(args[2])
+            if table.find(LocatorsTable, args[2]) then
+                table.remove(LocatorsTable, table.find(LocatorsTable, args[2]))
+            end
+        else
+            Locators:ShowLocator(LocalPlayer)
+            if table.find(LocatorsTable, LocalPlayer) then
+                table.remove(LocatorsTable, table.find(LocatorsTable, LocalPlayer))
+            end
+        end
+        LocatorShownState:set(CopyDict(LocatorsTable))
     end
 end)
 --[[

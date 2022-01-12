@@ -1,7 +1,6 @@
 local module = {}
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+local ServerStorage = game:GetService("ServerStorage")
 local Players = game:GetService("Players")
 
 module.FriendlyName = "Teleport All To Me"
@@ -15,8 +14,8 @@ module.ClientFunction = function()
     return nil, Players.LocalPlayer
 end
 
-module.ServerEvent = function(player)
-    local TeleportTargets = ServerScriptService.ExplorerKuraServer.GetMutedPlayers:Invoke()
+module.ServerEvent = function(player, ExplorerArgs)
+    local TeleportTargets = ExplorerArgs.TeleportTargets
     local EducatorTeleportTarget = TeleportTargets[player]
     for _, obj in ipairs(TeleportTargets) do
         obj:TeleportTo(EducatorTeleportTarget)

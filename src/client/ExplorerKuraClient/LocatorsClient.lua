@@ -9,7 +9,7 @@ function obj.New()
 	local self = table.create(Players.MaxPlayers)
 	local function OnPlayerAdded(player)
 		local function AddGui()
-			local rootpart = player.Character:FindFirstChild("HumanoidRootPart")
+			local rootpart = player.Character:WaitForChild("HumanoidRootPart")
 			local BillboardGui = Fusion.New "BillboardGui" {
 				Parent = rootpart;
 				ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
@@ -39,7 +39,7 @@ function obj.New()
 						TextColor3 = Color3.new(1, 1, 1);
 						TextScaled = true;
 						TextStrokeTransparency = 0;
-						Text = player.Name;
+						Text = player.DisplayName;
 					}
 				};
 			}
@@ -67,7 +67,6 @@ function obj:ShowLocator(player)
 	else
 		warn("unable to find player billboardgui")
 	end
-	KuraRE:FireServer("ShowLocator", {Target = player})
 end
 
 function obj:HideLocator(player)
@@ -76,7 +75,6 @@ function obj:HideLocator(player)
 	else
 		warn("unable to find player billboardgui")
 	end
-	KuraRE:FireServer("HideLocator", {Target = player})
 end
 
 function obj:GetPlayerLocatorStatus(player)

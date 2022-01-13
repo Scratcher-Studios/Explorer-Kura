@@ -19,7 +19,17 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GroupService = game:GetService("GroupService")
 local StarterGui = game:GetService("StarterGui")
 local Players = game:GetService("Players")
+
+-- Gets whatever instance of TopbarPlus is currently initialised. If not, start initialising it's own.
 local Icon
+
+if ReplicatedStorage:FindFirstChild("TopbarPlusReference") then
+    Icon = require(ReplicatedStorage.TopbarPlusReference.Value)
+elseif script:FindFirstChild("Icon") then
+    Icon = require(script.Icon)
+else
+    error("TopbarPlus not detected. Unable to initialise Kura.")
+end
 
 local Fusion = require(script.Fusion)
 State = Fusion.State
@@ -37,12 +47,6 @@ local function CopyDict(original) -- Yes, I stole this from DevHub. No, I don't 
 		copy[k] = v
 	end
 	return copy
-end
-
-if ReplicatedStorage:FindFirstChild("TopbarPlusReference") then
-    Icon = require(ReplicatedStorage.TopbarPlusReference.Value)
-else
-    Icon = require(script.Icon)
 end
 
 local KuraRE = ReplicatedStorage:WaitForChild("KuraRE")
@@ -222,6 +226,7 @@ local function CreateSection(props)
 end
 
 local function SetupKura()
+    ExplorerKuraContainer.Visible = true
     if CanUse == 1 then
         -- Educator
         ExplorerKuraContainer.Visible = true
@@ -338,13 +343,10 @@ local function SetupKura()
                                 [Fusion.OnEvent "Activated"] = function()
                                     local array = CopyDict(LocatorShownState:get())
                                     if table.find(array, player) then
-                                        Locators:HideLocator(player)
-                                        table.remove(array, table.find(array, player))
+                                        KuraRE:FireServer("HideLocators", {player})
                                     else
-                                        Locators:ShowLocator(player)
-                                        table.insert(array, player)
+                                        KuraRE:FireServer("ShowLocators", {player})
                                     end
-                                    LocatorShownState:set(array)
                                 end;
                             };
                             Fusion.New "ImageButton" {
@@ -415,12 +417,12 @@ local function SetupKura()
             local Debris = game:GetService("Debris")
             Debris:AddItem(frame)
             local player = frame.PlayerObj.Value
-            local MutedPlayers = MutedPlayersState:get()
+            local MutedPlayers = CopyDict(MutedPlayersState:get())
             if table.find(MutedPlayers, player) then
                 table.remove(MutedPlayers, player)
                 MutedPlayersState:set(MutedPlayers)
             end
-            local LocatorShown = LocatorShownState:get()
+            local LocatorShown = CopyDict(LocatorShownState:get())
             if table.find(LocatorShown, player) then
                 table.remove(LocatorShown, player)
                 LocatorShownState:set(LocatorShown)
@@ -754,9 +756,14 @@ local function SetupKura()
         RaiseHandButton:setImage("8127902992")
         RaiseHandButton:setName("RaiseHand")
         RaiseHandButton:setTip("Raise Hand")
-        RaiseHandButton.selected:Connect(function() end)
-        RaiseHandButton.deselected:Connect(function() end)
-
+        RaiseHandButton.selected:Connect(function()
+            RaiseHandButton:setTip("Lower Hand")
+            KuraRE:FireServer("ShowLocators", {})
+        end)
+        RaiseHandButton.deselected:Connect(function()
+            RaiseHandButton:setTip("Raise Hand")
+            KuraRE:FireServer("HideLocators", {})
+        end)
     else
         ExplorerKuraContainer.Visible = false
     end
@@ -872,7 +879,7 @@ local TopbarAnnouncementFrame = Fusion.New "Frame" {
 KuraRE.OnClientEvent:Connect(function(args)
     if args[1] == "KuraSetup" then
         CanUse = args[2]
-        SetupKura(args[2])
+        SetupKura()
     elseif args[1] == "Mute" then
         StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
     elseif args[1] == "Unmute" then
@@ -906,6 +913,7 @@ KuraRE.OnClientEvent:Connect(function(args)
         if args[2] then
             Locators:ShowLocator(args[2])
             table.insert(LocatorsTable, args[2])
+            print(Locators:GetPlayerLocatorStatus(args[2]))
         else
             Locators:ShowLocator(LocalPlayer)
             table.insert(LocatorsTable, LocalPlayer)
@@ -914,12 +922,12 @@ KuraRE.OnClientEvent:Connect(function(args)
     elseif args[1] == "HideLocator" then
         local LocatorsTable = LocatorShownState:get()
         if args[2] then
-            Locators:ShowLocator(args[2])
+            Locators:HideLocator(args[2])
             if table.find(LocatorsTable, args[2]) then
                 table.remove(LocatorsTable, table.find(LocatorsTable, args[2]))
             end
         else
-            Locators:ShowLocator(LocalPlayer)
+            Locators:HideLocator(LocalPlayer)
             if table.find(LocatorsTable, LocalPlayer) then
                 table.remove(LocatorsTable, table.find(LocatorsTable, LocalPlayer))
             end
@@ -946,4 +954,4 @@ KuraRF.OnClientInvoke = function(args)
     This is such a terrible idea. Never ever do this.
 end
 ]]
-if CanUse then SetupKura(CanUse) end
+if CanUse then SetupKura() end

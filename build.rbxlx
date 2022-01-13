@@ -213,10 +213,16 @@ GetMutedPlayers.OnInvoke = function()
     return MutedPlayers
 end
 
-local QuickActionsServerEvents = table.create(5) -- 5 is just an arbritrary number that I chose. Probably should do this based on # of QuickActions
-
 local LocatorsModule = require(script.LocatorsServer)
 local Locators = table.create(Players.MaxPlayers)
+local GetLocators = Instance.new("BindableFunction")
+GetLocators.Name = "GetLocators"
+GetLocators.Parent = ExplorerGetters
+GetLocators.OnInvoke = function()
+    return MutedPlayers
+end
+
+local QuickActionsServerEvents = table.create(5) -- 5 is just an arbritrary number that I chose. Probably should do this based on # of QuickActions
 
 local function CopyDict(original)
 	local copy = {}
@@ -261,6 +267,22 @@ RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
                 if QuickActionsServerEvents[arg[1]] then
                     QuickActionsServerEvents[arg[1]](player, {["TeleportTargets"] = PlayerTeleportTargets; ["MutedPlayers"] = MutedPlayers; ["Locators"] = Locators;},arg[2])
                 end
+            end  
+        elseif command == "ShowLocators" then
+            if Educator == player and typeof(arg) == "table" then
+                if arg[1]:IsA("Player") then
+                    Locators[arg[1]]:ShowLocator(true, Educator)
+                end
+            else
+                Locators[player]:ShowLocator(false, Educator)
+            end
+        elseif command == "HideLocators" then
+            if Educator == player and arg[1] then
+                if arg[1]:IsA("Player") then
+                    Locators[arg[1]]:HideLocator(true, Educator)
+                end
+            else
+                Locators[player]:HideLocator(false, Educator)
             end
         end
     end
@@ -277,6 +299,11 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
             return if TESTING_MODE == 0 then false else TESTING_MODE
         else
             if Educator == player then
+                for _, v in ipairs(Players:GetPlayers()) do
+                    if v ~= Educator then
+                        RE:FireClient(v, {"KuraSetup", 2})
+                    end
+                end
                 return 1
             elseif Educator then
                 return 2
@@ -340,23 +367,10 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
                     QuickActionsTable[QuickAction.Script] = CopyDict(QuickAction)
                 end)
             end
-            print(QuickActionsTable)
             return QuickActionsTable
         elseif arg.ActionType == "InvokeServer" then
             -- Ignore
         end
-    end
-end
-
-local function UpdatePlayerPermissions(educator)
-    if PartyTable then
-        for i, player in pairs(PartyTable) do
-            if i == 1 then
-                Educator = player
-            end
-        end
-    else
-        Educator = educator
     end
 end
 
@@ -366,13 +380,17 @@ local function PlayerJoinFunc(player: Player)
         -- So they joined from an Explorer Place Id
         if PlayerJoinData.TeleportData then
             if PlayerJoinData.TeleportData.GroupJoinTeleport then
-                PartyTable = PlayerJoinData.TeleportData.GroupJoinPlayers
-                UpdatePlayerPermissions()
+                PartyTable = CopyDict(PlayerJoinData.TeleportData.GroupJoinPlayers)
+                for i, player in ipairs(PartyTable) do
+                    if i == 1 then
+                        Educator = player
+                    end
+                end
             end
         end
     elseif game.PrivateServerId ~= 0 then
         if player.UserId == game.PrivateServerOwnerId then
-            UpdatePlayerPermissions(player)
+            Educator = player
         end
     end
     if Educator then
@@ -434,20 +452,18 @@ function obj.New(Target)
 end
 
 function obj:ShowLocator(isEducatorRequesting, educator)
-    if isEducatorRequesting then
-        RE:FireClient(obj.Target, {"ShowLocator"})
-    else
-        RE:FireClient(educator, {"ShowLocator", self.Target})
+    if not isEducatorRequesting then
+        RE:FireClient(self.Target, {"ShowLocator"})
     end
+    RE:FireClient(educator, {"ShowLocator", self.Target})
     self.LocatorShown = true
 end
 
 function obj:HideLocator(isEducatorRequesting, educator)
-    if isEducatorRequesting then
-        RE:FireClient(obj.Target, {"HideLocator"})
-    else
-        RE:FireClient(educator, {"HideLocator", self.Target})
+    if not isEducatorRequesting then
+        RE:FireClient(self.Target, {"HideLocator"})
     end
+    RE:FireClient(educator, {"HideLocator", self.Target})
     self.LocatorShown = false
 end
 
@@ -678,7 +694,6 @@ local obj = {}
 obj.__index = obj
 local Players = game:GetService("Players")
 local Maid = require(script.Parent.Maid)
-local TeleportObjTable = table.create(Players.MaxPlayers)
 
 local USE_PIVOTTO = false -- I'll work on this eventually
 
@@ -818,7 +833,17 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GroupService = game:GetService("GroupService")
 local StarterGui = game:GetService("StarterGui")
 local Players = game:GetService("Players")
+
+-- Gets whatever instance of TopbarPlus is currently initialised. If not, start initialising it's own.
 local Icon
+
+if ReplicatedStorage:FindFirstChild("TopbarPlusReference") then
+    Icon = require(ReplicatedStorage.TopbarPlusReference.Value)
+elseif script:FindFirstChild("Icon") then
+    Icon = require(script.Icon)
+else
+    error("TopbarPlus not detected. Unable to initialise Kura.")
+end
 
 local Fusion = require(script.Fusion)
 State = Fusion.State
@@ -836,12 +861,6 @@ local function CopyDict(original) -- Yes, I stole this from DevHub. No, I don't 
 		copy[k] = v
 	end
 	return copy
-end
-
-if ReplicatedStorage:FindFirstChild("TopbarPlusReference") then
-    Icon = require(ReplicatedStorage.TopbarPlusReference.Value)
-else
-    Icon = require(script.Icon)
 end
 
 local KuraRE = ReplicatedStorage:WaitForChild("KuraRE")
@@ -1021,6 +1040,7 @@ local function CreateSection(props)
 end
 
 local function SetupKura()
+    ExplorerKuraContainer.Visible = true
     if CanUse == 1 then
         -- Educator
         ExplorerKuraContainer.Visible = true
@@ -1137,13 +1157,10 @@ local function SetupKura()
                                 [Fusion.OnEvent "Activated"] = function()
                                     local array = CopyDict(LocatorShownState:get())
                                     if table.find(array, player) then
-                                        Locators:HideLocator(player)
-                                        table.remove(array, table.find(array, player))
+                                        KuraRE:FireServer("HideLocators", {player})
                                     else
-                                        Locators:ShowLocator(player)
-                                        table.insert(array, player)
+                                        KuraRE:FireServer("ShowLocators", {player})
                                     end
-                                    LocatorShownState:set(array)
                                 end;
                             };
                             Fusion.New "ImageButton" {
@@ -1214,12 +1231,12 @@ local function SetupKura()
             local Debris = game:GetService("Debris")
             Debris:AddItem(frame)
             local player = frame.PlayerObj.Value
-            local MutedPlayers = MutedPlayersState:get()
+            local MutedPlayers = CopyDict(MutedPlayersState:get())
             if table.find(MutedPlayers, player) then
                 table.remove(MutedPlayers, player)
                 MutedPlayersState:set(MutedPlayers)
             end
-            local LocatorShown = LocatorShownState:get()
+            local LocatorShown = CopyDict(LocatorShownState:get())
             if table.find(LocatorShown, player) then
                 table.remove(LocatorShown, player)
                 LocatorShownState:set(LocatorShown)
@@ -1553,9 +1570,14 @@ local function SetupKura()
         RaiseHandButton:setImage("8127902992")
         RaiseHandButton:setName("RaiseHand")
         RaiseHandButton:setTip("Raise Hand")
-        RaiseHandButton.selected:Connect(function() end)
-        RaiseHandButton.deselected:Connect(function() end)
-
+        RaiseHandButton.selected:Connect(function()
+            RaiseHandButton:setTip("Lower Hand")
+            KuraRE:FireServer("ShowLocators", {})
+        end)
+        RaiseHandButton.deselected:Connect(function()
+            RaiseHandButton:setTip("Raise Hand")
+            KuraRE:FireServer("HideLocators", {})
+        end)
     else
         ExplorerKuraContainer.Visible = false
     end
@@ -1671,7 +1693,7 @@ local TopbarAnnouncementFrame = Fusion.New "Frame" {
 KuraRE.OnClientEvent:Connect(function(args)
     if args[1] == "KuraSetup" then
         CanUse = args[2]
-        SetupKura(args[2])
+        SetupKura()
     elseif args[1] == "Mute" then
         StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
     elseif args[1] == "Unmute" then
@@ -1705,6 +1727,7 @@ KuraRE.OnClientEvent:Connect(function(args)
         if args[2] then
             Locators:ShowLocator(args[2])
             table.insert(LocatorsTable, args[2])
+            print(Locators:GetPlayerLocatorStatus(args[2]))
         else
             Locators:ShowLocator(LocalPlayer)
             table.insert(LocatorsTable, LocalPlayer)
@@ -1713,12 +1736,12 @@ KuraRE.OnClientEvent:Connect(function(args)
     elseif args[1] == "HideLocator" then
         local LocatorsTable = LocatorShownState:get()
         if args[2] then
-            Locators:ShowLocator(args[2])
+            Locators:HideLocator(args[2])
             if table.find(LocatorsTable, args[2]) then
                 table.remove(LocatorsTable, table.find(LocatorsTable, args[2]))
             end
         else
-            Locators:ShowLocator(LocalPlayer)
+            Locators:HideLocator(LocalPlayer)
             if table.find(LocatorsTable, LocalPlayer) then
                 table.remove(LocatorsTable, table.find(LocatorsTable, LocalPlayer))
             end
@@ -1745,7 +1768,7 @@ KuraRF.OnClientInvoke = function(args)
     This is such a terrible idea. Never ever do this.
 end
 ]]
-if CanUse then SetupKura(CanUse) end</string>
+if CanUse then SetupKura() end</string>
           </Properties>
           <Item class="ModuleScript" referent="19">
             <Properties>
@@ -9389,7 +9412,7 @@ function obj.New()
 	local self = table.create(Players.MaxPlayers)
 	local function OnPlayerAdded(player)
 		local function AddGui()
-			local rootpart = player.Character:FindFirstChild("HumanoidRootPart")
+			local rootpart = player.Character:WaitForChild("HumanoidRootPart")
 			local BillboardGui = Fusion.New "BillboardGui" {
 				Parent = rootpart;
 				ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
@@ -9419,7 +9442,7 @@ function obj.New()
 						TextColor3 = Color3.new(1, 1, 1);
 						TextScaled = true;
 						TextStrokeTransparency = 0;
-						Text = player.Name;
+						Text = player.DisplayName;
 					}
 				};
 			}
@@ -9447,7 +9470,6 @@ function obj:ShowLocator(player)
 	else
 		warn("unable to find player billboardgui")
 	end
-	KuraRE:FireServer("ShowLocator", {Target = player})
 end
 
 function obj:HideLocator(player)
@@ -9456,7 +9478,6 @@ function obj:HideLocator(player)
 	else
 		warn("unable to find player billboardgui")
 	end
-	KuraRE:FireServer("HideLocator", {Target = player})
 end
 
 function obj:GetPlayerLocatorStatus(player)

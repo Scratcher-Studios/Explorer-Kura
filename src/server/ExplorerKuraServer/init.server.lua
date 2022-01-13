@@ -49,10 +49,16 @@ GetMutedPlayers.OnInvoke = function()
     return MutedPlayers
 end
 
-local QuickActionsServerEvents = table.create(5) -- 5 is just an arbritrary number that I chose. Probably should do this based on # of QuickActions
-
 local LocatorsModule = require(script.LocatorsServer)
 local Locators = table.create(Players.MaxPlayers)
+local GetLocators = Instance.new("BindableFunction")
+GetLocators.Name = "GetLocators"
+GetLocators.Parent = ExplorerGetters
+GetLocators.OnInvoke = function()
+    return MutedPlayers
+end
+
+local QuickActionsServerEvents = table.create(5) -- 5 is just an arbritrary number that I chose. Probably should do this based on # of QuickActions
 
 local function CopyDict(original)
 	local copy = {}
@@ -97,6 +103,22 @@ RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
                 if QuickActionsServerEvents[arg[1]] then
                     QuickActionsServerEvents[arg[1]](player, {["TeleportTargets"] = PlayerTeleportTargets; ["MutedPlayers"] = MutedPlayers; ["Locators"] = Locators;},arg[2])
                 end
+            end  
+        elseif command == "ShowLocators" then
+            if Educator == player and typeof(arg) == "table" then
+                if arg[1]:IsA("Player") then
+                    Locators[arg[1]]:ShowLocator(true, Educator)
+                end
+            else
+                Locators[player]:ShowLocator(false, Educator)
+            end
+        elseif command == "HideLocators" then
+            if Educator == player and arg[1] then
+                if arg[1]:IsA("Player") then
+                    Locators[arg[1]]:HideLocator(true, Educator)
+                end
+            else
+                Locators[player]:HideLocator(false, Educator)
             end
         end
     end
@@ -113,6 +135,11 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
             return if TESTING_MODE == 0 then false else TESTING_MODE
         else
             if Educator == player then
+                for _, v in ipairs(Players:GetPlayers()) do
+                    if v ~= Educator then
+                        RE:FireClient(v, {"KuraSetup", 2})
+                    end
+                end
                 return 1
             elseif Educator then
                 return 2
@@ -176,23 +203,10 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
                     QuickActionsTable[QuickAction.Script] = CopyDict(QuickAction)
                 end)
             end
-            print(QuickActionsTable)
             return QuickActionsTable
         elseif arg.ActionType == "InvokeServer" then
             -- Ignore
         end
-    end
-end
-
-local function UpdatePlayerPermissions(educator)
-    if PartyTable then
-        for i, player in pairs(PartyTable) do
-            if i == 1 then
-                Educator = player
-            end
-        end
-    else
-        Educator = educator
     end
 end
 
@@ -202,13 +216,17 @@ local function PlayerJoinFunc(player: Player)
         -- So they joined from an Explorer Place Id
         if PlayerJoinData.TeleportData then
             if PlayerJoinData.TeleportData.GroupJoinTeleport then
-                PartyTable = PlayerJoinData.TeleportData.GroupJoinPlayers
-                UpdatePlayerPermissions()
+                PartyTable = CopyDict(PlayerJoinData.TeleportData.GroupJoinPlayers)
+                for i, player in ipairs(PartyTable) do
+                    if i == 1 then
+                        Educator = player
+                    end
+                end
             end
         end
     elseif game.PrivateServerId ~= 0 then
         if player.UserId == game.PrivateServerOwnerId then
-            UpdatePlayerPermissions(player)
+            Educator = player
         end
     end
     if Educator then

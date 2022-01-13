@@ -294,7 +294,7 @@ local function SetupKura()
                         Name = "PlayerImage";
                     };
                     Fusion.New "TextLabel" {
-                        Text = player.Name;
+                        Text = player.DisplayName;
                         TextColor3 = WhiteState;
                         Font = Enum.Font.Gotham;
                         AnchorPoint = Vector2.new(0, 0.5);
@@ -373,15 +373,10 @@ local function SetupKura()
                                 [Fusion.OnEvent "Activated"] = function()
                                     local array = CopyDict(MutedPlayersState:get())
                                     if table.find(array, player) then
-                                        table.remove(array, table.find(array, player))
                                         KuraRE:FireServer("PlayerFrames", {Action = "Unmute"; Player = player})
-                                        print("unmute")
                                     else
-                                        table.insert(array, player)
                                         KuraRE:FireServer("PlayerFrames", {Action = "Mute"; Player = player})
-                                        print("mute")
                                     end
-                                    MutedPlayersState:set(array)
                                 end;
                             };
                             Fusion.New "ImageButton" {
@@ -435,14 +430,13 @@ local function SetupKura()
         -- Quick Actions Frame
         Fusion.New "UIGridLayout" {
             CellPadding = UDim2.new(0,5,0,5);
-            CellSize = UDim2.new(0.25,0,0,50);
+            CellSize = UDim2.new(0.25,-5,0,50);
             StartCorner = Enum.StartCorner.TopLeft;
             Parent = QuickActionsFrame;
         }
         local QuickActionGridPadding = CreateUIPadding()
         QuickActionGridPadding.Parent = QuickActionsFrame
         local QuickActionsArray = KuraRF:InvokeServer("QuickActions", {ActionType = "RequestActionList"})
-        print(QuickActionsArray)
         if QuickActionsArray then
             local QuickActionButtons = Fusion.ComputedPairs(QuickActionsArray,
             -- Processor
@@ -511,11 +505,9 @@ local function SetupKura()
                         CreateUICorner();
                     };
                     [Fusion.OnEvent("Activated")] = function()
-                        print(ActionTable)
                         local Module = ReplicatedStorage.ExplorerKuraQuickActions:FindFirstChild(ActionTable.Script)
-                        print(Module)
                         local Action = require(Module)
-                        local OnStateResult: boolean|nil, FireServer: any = Action.ClientFunction(onState:get())
+                        local OnStateResult: boolean|nil, FireServer: any = Action.ClientFunction(onState:get(), {["LocatorShownState"] = LocatorShownState; ["MutedPlayersState"] = MutedPlayersState;})
                         if typeof(OnStateResult) == "boolean" then
                             onState:set(OnStateResult)
                         end
@@ -878,7 +870,6 @@ local TopbarAnnouncementFrame = Fusion.New "Frame" {
 }
 
 KuraRE.OnClientEvent:Connect(function(args)
-    print(args)
     if args[1] == "KuraSetup" then
         CanUse = args[2]
         SetupKura(args[2])
@@ -920,7 +911,7 @@ KuraRE.OnClientEvent:Connect(function(args)
             table.insert(LocatorsTable, LocalPlayer)
         end
         LocatorShownState:set(CopyDict(LocatorsTable))
-    elseif args[2] == "HideLocator" then
+    elseif args[1] == "HideLocator" then
         local LocatorsTable = LocatorShownState:get()
         if args[2] then
             Locators:ShowLocator(args[2])
@@ -934,6 +925,20 @@ KuraRE.OnClientEvent:Connect(function(args)
             end
         end
         LocatorShownState:set(CopyDict(LocatorsTable))
+    elseif args[1] == "UpdateMutedState" then
+        local array = CopyDict(MutedPlayersState:get())
+        if args[3] == true then
+            -- Mute
+            if not table.find(array, args[2]) then
+                table.insert(array, args[2])
+            end
+        elseif args[3] == false then
+            -- Unmute
+            if table.find(array, args[2]) then
+                table.remove(array, table.find(array, args[2]))
+            end
+        end
+        MutedPlayersState:set(array)
     end
 end)
 --[[

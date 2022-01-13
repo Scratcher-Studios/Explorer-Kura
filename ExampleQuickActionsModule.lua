@@ -20,7 +20,7 @@ module.DefaultState = false
 module.Image = nil
 
 -- * Function that is run on the client. Return a boolean to change state (or nil if you don't) and add arguments to pass onto ServerEvent.
-module.ClientFunction = function(onState: boolean) -- basically is the current value of the state.
+module.ClientFunction = function(onState: boolean) -- onState basically is the current value of the state of the button.
     if onState then
         return false, nil -- OnStateResult, FireServer
     else
@@ -29,7 +29,7 @@ module.ClientFunction = function(onState: boolean) -- basically is the current v
 end
 
 -- Function that runs on the server.
-module.ServerEvent = function(player: Player, args)
+module.ServerEvent = function(player: Player, ExplorerArgs, ClientArgs) -- player is the player requesting the function (which is only the educator currently), ExplorerArgs are tables that ExplorerKuraServer stores whilst ClientArgs are arguments passed over by the ClientFunction.
 
 end
 

@@ -23,6 +23,37 @@
       </Properties>
       <Item class="ModuleScript" referent="3">
         <Properties>
+          <string name="Name">MuteAllPlayers</string>
+          <string name="Source">--[[
+    Mutes everyone. Licensed with Apache Version 2.0. See LICENSE for details. (c) 2022 Explorers of the Metaverse
+]]
+
+local module = {}
+
+local KuraRE = game:GetService("ReplicatedStorage"):WaitForChild("KuraRE")
+
+module.FriendlyName = "Mute All"
+
+module.DefaultState = false
+
+module.Image = "rbxassetid://8127902088"
+
+module.ClientFunction = function(_)
+    return nil, true
+end
+
+module.ServerEvent = function(player, ExplorerArgs)
+    for k, v in pairs(ExplorerArgs.MutedPlayers) do
+        v:Mute()
+        KuraRE:FireClient(player, {"UpdateMutedState", k, true})
+    end
+end
+
+return module</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="4">
+        <Properties>
           <string name="Name">TeleportAllToMe</string>
           <string name="Source">--[[
     Teleports all to educator. Licensed with Apache Version 2.0. See LICENSE for details. (c) 2022 Explorers of the Metaverse
@@ -55,7 +86,7 @@ end
 return module</string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="4">
+      <Item class="ModuleScript" referent="5">
         <Properties>
           <string name="Name">TeleportAllToSpawns</string>
           <string name="Source">--[[
@@ -87,17 +118,48 @@ end
 return module</string>
         </Properties>
       </Item>
+      <Item class="ModuleScript" referent="6">
+        <Properties>
+          <string name="Name">UnmuteAllPlayers</string>
+          <string name="Source">--[[
+    Unmutes everyone. Licensed with Apache Version 2.0. See LICENSE for details. (c) 2022 Explorers of the Metaverse
+]]
+
+local module = {}
+
+local KuraRE = game:GetService("ReplicatedStorage"):WaitForChild("KuraRE")
+
+module.FriendlyName = "Unmute All"
+
+module.DefaultState = false
+
+module.Image = "rbxassetid://8127903374"
+
+module.ClientFunction = function(_)
+    return nil, true
+end
+
+module.ServerEvent = function(player, ExplorerArgs)
+    for k, v in pairs(ExplorerArgs.MutedPlayers) do
+        v:Unmute()
+        KuraRE:FireClient(player, {"UpdateMutedState", k, false})
+    end
+end
+
+return module</string>
+        </Properties>
+      </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="5">
+  <Item class="ServerScriptService" referent="7">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="6">
+    <Item class="Folder" referent="8">
       <Properties>
         <string name="Name">Server</string>
       </Properties>
-      <Item class="Script" referent="7">
+      <Item class="Script" referent="9">
         <Properties>
           <string name="Name">ExplorerKuraServer</string>
           <string name="Source">--!strict
@@ -185,9 +247,11 @@ RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
                         PlayerTeleportTargets[arg.Target]:TeleportTo(PlayerTeleportTargets[player])
                     end
                 elseif arg.Action == "Mute" then
-                    MutedPlayers[player]:Mute()
+                    MutedPlayers[arg.Player]:Mute()
+                    RE:FireClient(player, {"UpdateMutedState", arg.Player, true})
                 elseif arg.Action == "Unmute" then
-                    MutedPlayers[player]:Unmute()
+                    MutedPlayers[arg.Player]:Unmute()
+                    RE:FireClient(player, {"UpdateMutedState", arg.Player, false})
                 else
                     error("Action arg " ..arg.Action .." not found.")
                 end
@@ -338,7 +402,7 @@ for _, v in pairs(Players:GetPlayers()) do
     PlayerJoinFunc(v)
 end</string>
         </Properties>
-        <Item class="ModuleScript" referent="8">
+        <Item class="ModuleScript" referent="10">
           <Properties>
             <string name="Name">LocatorsServer</string>
             <string name="Source">--[[
@@ -395,7 +459,7 @@ end
 return obj</string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="9">
+        <Item class="ModuleScript" referent="11">
           <Properties>
             <string name="Name">Maid</string>
             <string name="Source">-- Maid
@@ -554,7 +618,7 @@ Maid.clean = Maid.doCleaning
 return Maid</string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="10">
+        <Item class="ModuleScript" referent="12">
           <Properties>
             <string name="Name">MutedPlayers</string>
             <string name="Source">--[[
@@ -603,7 +667,7 @@ end
 return obj</string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="11">
+        <Item class="ModuleScript" referent="13">
           <Properties>
             <string name="Name">TeleportTargets</string>
             <string name="Source">--[[
@@ -712,25 +776,25 @@ return obj</string>
       </Item>
     </Item>
   </Item>
-  <Item class="SoundService" referent="12">
+  <Item class="SoundService" referent="14">
     <Properties>
       <string name="Name">SoundService</string>
       <bool name="RespectFilteringEnabled">true</bool>
     </Properties>
   </Item>
-  <Item class="StarterPlayer" referent="13">
+  <Item class="StarterPlayer" referent="15">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="14">
+    <Item class="StarterPlayerScripts" referent="16">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="15">
+      <Item class="Folder" referent="17">
         <Properties>
           <string name="Name">Client</string>
         </Properties>
-        <Item class="LocalScript" referent="16">
+        <Item class="LocalScript" referent="18">
           <Properties>
             <string name="Name">ExplorerKuraClient</string>
             <string name="Source">--[[
@@ -1029,7 +1093,7 @@ local function SetupKura()
                         Name = "PlayerImage";
                     };
                     Fusion.New "TextLabel" {
-                        Text = player.Name;
+                        Text = player.DisplayName;
                         TextColor3 = WhiteState;
                         Font = Enum.Font.Gotham;
                         AnchorPoint = Vector2.new(0, 0.5);
@@ -1108,15 +1172,10 @@ local function SetupKura()
                                 [Fusion.OnEvent "Activated"] = function()
                                     local array = CopyDict(MutedPlayersState:get())
                                     if table.find(array, player) then
-                                        table.remove(array, table.find(array, player))
                                         KuraRE:FireServer("PlayerFrames", {Action = "Unmute"; Player = player})
-                                        print("unmute")
                                     else
-                                        table.insert(array, player)
                                         KuraRE:FireServer("PlayerFrames", {Action = "Mute"; Player = player})
-                                        print("mute")
                                     end
-                                    MutedPlayersState:set(array)
                                 end;
                             };
                             Fusion.New "ImageButton" {
@@ -1170,14 +1229,13 @@ local function SetupKura()
         -- Quick Actions Frame
         Fusion.New "UIGridLayout" {
             CellPadding = UDim2.new(0,5,0,5);
-            CellSize = UDim2.new(0.25,0,0,50);
+            CellSize = UDim2.new(0.25,-5,0,50);
             StartCorner = Enum.StartCorner.TopLeft;
             Parent = QuickActionsFrame;
         }
         local QuickActionGridPadding = CreateUIPadding()
         QuickActionGridPadding.Parent = QuickActionsFrame
         local QuickActionsArray = KuraRF:InvokeServer("QuickActions", {ActionType = "RequestActionList"})
-        print(QuickActionsArray)
         if QuickActionsArray then
             local QuickActionButtons = Fusion.ComputedPairs(QuickActionsArray,
             -- Processor
@@ -1246,11 +1304,9 @@ local function SetupKura()
                         CreateUICorner();
                     };
                     [Fusion.OnEvent("Activated")] = function()
-                        print(ActionTable)
                         local Module = ReplicatedStorage.ExplorerKuraQuickActions:FindFirstChild(ActionTable.Script)
-                        print(Module)
                         local Action = require(Module)
-                        local OnStateResult: boolean|nil, FireServer: any = Action.ClientFunction(onState:get())
+                        local OnStateResult: boolean|nil, FireServer: any = Action.ClientFunction(onState:get(), {["LocatorShownState"] = LocatorShownState; ["MutedPlayersState"] = MutedPlayersState;})
                         if typeof(OnStateResult) == "boolean" then
                             onState:set(OnStateResult)
                         end
@@ -1613,7 +1669,6 @@ local TopbarAnnouncementFrame = Fusion.New "Frame" {
 }
 
 KuraRE.OnClientEvent:Connect(function(args)
-    print(args)
     if args[1] == "KuraSetup" then
         CanUse = args[2]
         SetupKura(args[2])
@@ -1655,7 +1710,7 @@ KuraRE.OnClientEvent:Connect(function(args)
             table.insert(LocatorsTable, LocalPlayer)
         end
         LocatorShownState:set(CopyDict(LocatorsTable))
-    elseif args[2] == "HideLocator" then
+    elseif args[1] == "HideLocator" then
         local LocatorsTable = LocatorShownState:get()
         if args[2] then
             Locators:ShowLocator(args[2])
@@ -1669,6 +1724,20 @@ KuraRE.OnClientEvent:Connect(function(args)
             end
         end
         LocatorShownState:set(CopyDict(LocatorsTable))
+    elseif args[1] == "UpdateMutedState" then
+        local array = CopyDict(MutedPlayersState:get())
+        if args[3] == true then
+            -- Mute
+            if not table.find(array, args[2]) then
+                table.insert(array, args[2])
+            end
+        elseif args[3] == false then
+            -- Unmute
+            if table.find(array, args[2]) then
+                table.remove(array, table.find(array, args[2]))
+            end
+        end
+        MutedPlayersState:set(array)
     end
 end)
 --[[
@@ -1678,7 +1747,7 @@ end
 ]]
 if CanUse then SetupKura(CanUse) end</string>
           </Properties>
-          <Item class="ModuleScript" referent="17">
+          <Item class="ModuleScript" referent="19">
             <Properties>
               <string name="Name">Fusion</string>
               <string name="Source">--[[
@@ -1707,11 +1776,11 @@ return restrictRead("Fusion", {
 	Spring = require(script.Animation.Spring)
 })</string>
             </Properties>
-            <Item class="Folder" referent="18">
+            <Item class="Folder" referent="20">
               <Properties>
                 <string name="Name">Animation</string>
               </Properties>
-              <Item class="ModuleScript" referent="19">
+              <Item class="ModuleScript" referent="21">
                 <Properties>
                   <string name="Name">Spring</string>
                   <string name="Source">--[[
@@ -1935,7 +2004,7 @@ end
 return Spring</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="20">
+              <Item class="ModuleScript" referent="22">
                 <Properties>
                   <string name="Name">SpringScheduler</string>
                   <string name="Source">--[[
@@ -2074,7 +2143,7 @@ RunService:BindToRenderStep(
 return SpringScheduler</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="21">
+              <Item class="ModuleScript" referent="23">
                 <Properties>
                   <string name="Name">Tween</string>
                   <string name="Source">--[[
@@ -2173,7 +2242,7 @@ end
 return Tween</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="22">
+              <Item class="ModuleScript" referent="24">
                 <Properties>
                   <string name="Name">TweenScheduler</string>
                   <string name="Source">--[[
@@ -2252,7 +2321,7 @@ RunService:BindToRenderStep(
 return TweenScheduler</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="23">
+              <Item class="ModuleScript" referent="25">
                 <Properties>
                   <string name="Name">getTweenRatio</string>
                   <string name="Source">--[[
@@ -2297,7 +2366,7 @@ end
 return getTweenRatio</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="24">
+              <Item class="ModuleScript" referent="26">
                 <Properties>
                   <string name="Name">lerpType</string>
                   <string name="Source">--[[
@@ -2441,7 +2510,7 @@ end
 return lerpType</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="25">
+              <Item class="ModuleScript" referent="27">
                 <Properties>
                   <string name="Name">packType</string>
                   <string name="Source">--[[
@@ -2536,7 +2605,7 @@ end
 return packType</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="26">
+              <Item class="ModuleScript" referent="28">
                 <Properties>
                   <string name="Name">springCoefficients</string>
                   <string name="Source">--[[
@@ -2657,7 +2726,7 @@ end
 return springCoefficients</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="27">
+              <Item class="ModuleScript" referent="29">
                 <Properties>
                   <string name="Name">unpackType</string>
                   <string name="Source">--[[
@@ -2741,11 +2810,11 @@ return unpackType</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="Folder" referent="28">
+            <Item class="Folder" referent="30">
               <Properties>
                 <string name="Name">Colour</string>
               </Properties>
-              <Item class="ModuleScript" referent="29">
+              <Item class="ModuleScript" referent="31">
                 <Properties>
                   <string name="Name">Oklab</string>
                   <string name="Source">--[[
@@ -2802,11 +2871,11 @@ return Oklab</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="Folder" referent="30">
+            <Item class="Folder" referent="32">
               <Properties>
                 <string name="Name">Dependencies</string>
               </Properties>
-              <Item class="ModuleScript" referent="31">
+              <Item class="ModuleScript" referent="33">
                 <Properties>
                   <string name="Name">captureDependencies</string>
                   <string name="Source">--[[
@@ -2876,7 +2945,7 @@ end
 return captureDependencies</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="32">
+              <Item class="ModuleScript" referent="34">
                 <Properties>
                   <string name="Name">initDependency</string>
                   <string name="Source">--[[
@@ -2907,7 +2976,7 @@ end
 return initDependency</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="33">
+              <Item class="ModuleScript" referent="35">
                 <Properties>
                   <string name="Name">sharedState</string>
                   <string name="Source">--[[
@@ -2936,7 +3005,7 @@ local sharedState: SharedState = {
 return sharedState</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="34">
+              <Item class="ModuleScript" referent="36">
                 <Properties>
                   <string name="Name">updateAll</string>
                   <string name="Source">--[[
@@ -3061,7 +3130,7 @@ end
 return updateAll</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="35">
+              <Item class="ModuleScript" referent="37">
                 <Properties>
                   <string name="Name">useDependency</string>
                   <string name="Source">--[[
@@ -3094,11 +3163,11 @@ return useDependency</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="Folder" referent="36">
+            <Item class="Folder" referent="38">
               <Properties>
                 <string name="Name">Instances</string>
               </Properties>
-              <Item class="ModuleScript" referent="37">
+              <Item class="ModuleScript" referent="39">
                 <Properties>
                   <string name="Name">Children</string>
                   <string name="Source">--[[
@@ -3112,7 +3181,7 @@ return {
 }</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="38">
+              <Item class="ModuleScript" referent="40">
                 <Properties>
                   <string name="Name">New</string>
                   <string name="Source">--[[
@@ -3462,7 +3531,7 @@ end
 return New</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="39">
+              <Item class="ModuleScript" referent="41">
                 <Properties>
                   <string name="Name">OnChange</string>
                   <string name="Source">--[[
@@ -3481,7 +3550,7 @@ end
 return OnChange</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="40">
+              <Item class="ModuleScript" referent="42">
                 <Properties>
                   <string name="Name">OnEvent</string>
                   <string name="Source">--[[
@@ -3500,7 +3569,7 @@ end
 return OnEvent</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="41">
+              <Item class="ModuleScript" referent="43">
                 <Properties>
                   <string name="Name">Scheduler</string>
                   <string name="Source">--[[
@@ -3587,7 +3656,7 @@ RunService:BindToRenderStep(
 return Scheduler</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="42">
+              <Item class="ModuleScript" referent="44">
                 <Properties>
                   <string name="Name">defaultProps</string>
                   <string name="Source">--[[
@@ -3700,7 +3769,7 @@ end</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="ModuleScript" referent="43">
+            <Item class="ModuleScript" referent="45">
               <Properties>
                 <string name="Name">LICENSE</string>
                 <string name="Source">local text = 'MIT License\nCopyright (c) 2021 Elttob\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.'
@@ -3708,11 +3777,11 @@ end</string>
 return text</string>
               </Properties>
             </Item>
-            <Item class="Folder" referent="44">
+            <Item class="Folder" referent="46">
               <Properties>
                 <string name="Name">Logging</string>
               </Properties>
-              <Item class="ModuleScript" referent="45">
+              <Item class="ModuleScript" referent="47">
                 <Properties>
                   <string name="Name">logError</string>
                   <string name="Source">--[[
@@ -3744,7 +3813,7 @@ end
 return logError</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="46">
+              <Item class="ModuleScript" referent="48">
                 <Properties>
                   <string name="Name">logErrorNonFatal</string>
                   <string name="Source">--[[
@@ -3778,7 +3847,7 @@ end
 return logErrorNonFatal</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="47">
+              <Item class="ModuleScript" referent="49">
                 <Properties>
                   <string name="Name">logWarn</string>
                   <string name="Source">--[[
@@ -3802,7 +3871,7 @@ end
 return logWarn</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="48">
+              <Item class="ModuleScript" referent="50">
                 <Properties>
                   <string name="Name">messages</string>
                   <string name="Source">--[[
@@ -3827,7 +3896,7 @@ return {
 }</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="49">
+              <Item class="ModuleScript" referent="51">
                 <Properties>
                   <string name="Name">parseError</string>
                   <string name="Source">--[[
@@ -3850,11 +3919,11 @@ return parseError</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="Folder" referent="50">
+            <Item class="Folder" referent="52">
               <Properties>
                 <string name="Name">State</string>
               </Properties>
-              <Item class="ModuleScript" referent="51">
+              <Item class="ModuleScript" referent="53">
                 <Properties>
                   <string name="Name">Compat</string>
                   <string name="Source">--[[
@@ -3932,7 +4001,7 @@ end
 return Compat</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="52">
+              <Item class="ModuleScript" referent="54">
                 <Properties>
                   <string name="Name">Computed</string>
                   <string name="Source">--[[
@@ -4031,7 +4100,7 @@ end
 return Computed</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="53">
+              <Item class="ModuleScript" referent="55">
                 <Properties>
                   <string name="Name">ComputedPairs</string>
                   <string name="Source">--[[
@@ -4255,7 +4324,7 @@ end
 return ComputedPairs</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="54">
+              <Item class="ModuleScript" referent="56">
                 <Properties>
                   <string name="Name">State</string>
                   <string name="Source">--[[
@@ -4323,7 +4392,7 @@ return State</string>
                 </Properties>
               </Item>
             </Item>
-            <Item class="ModuleScript" referent="55">
+            <Item class="ModuleScript" referent="57">
               <Properties>
                 <string name="Name">Types</string>
                 <string name="Source">--[[
@@ -4379,11 +4448,11 @@ export type Animatable =
 return nil</string>
               </Properties>
             </Item>
-            <Item class="Folder" referent="56">
+            <Item class="Folder" referent="58">
               <Properties>
                 <string name="Name">Utility</string>
               </Properties>
-              <Item class="ModuleScript" referent="57">
+              <Item class="ModuleScript" referent="59">
                 <Properties>
                   <string name="Name">None</string>
                   <string name="Source">--[[
@@ -4396,7 +4465,7 @@ return {
 }</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="58">
+              <Item class="ModuleScript" referent="60">
                 <Properties>
                   <string name="Name">cleanup</string>
                   <string name="Source">--[[
@@ -4454,7 +4523,7 @@ end
 return cleanup</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="59">
+              <Item class="ModuleScript" referent="61">
                 <Properties>
                   <string name="Name">cleanupOnDestroy</string>
                   <string name="Source">--[[
@@ -4577,7 +4646,7 @@ end
 return cleanupOnDestroy</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="60">
+              <Item class="ModuleScript" referent="62">
                 <Properties>
                   <string name="Name">cleanupOnDestroy_smart</string>
                   <string name="Source">--[[
@@ -4697,7 +4766,7 @@ end
 return cleanupOnDestroy</string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="61">
+              <Item class="ModuleScript" referent="63">
                 <Properties>
                   <string name="Name">restrictRead</string>
                   <string name="Source">--[[
@@ -4727,7 +4796,7 @@ return restrictRead</string>
               </Item>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="62">
+          <Item class="ModuleScript" referent="64">
             <Properties>
               <string name="Name">Icon</string>
               <string name="Source">--[[ icon:header
@@ -7263,7 +7332,7 @@ Icon.Destroy = Icon.destroy -- an alias for you maid-using Pascal lovers
 
 return Icon</string>
             </Properties>
-            <Item class="ModuleScript" referent="63">
+            <Item class="ModuleScript" referent="65">
               <Properties>
                 <string name="Name">IconController</string>
                 <string name="Source">--[[ icon_controller:header
@@ -8442,7 +8511,7 @@ end)
 return IconController</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="64">
+            <Item class="ModuleScript" referent="66">
               <Properties>
                 <string name="Name">LICENSE</string>
                 <string name="Source">local text = 'MIT License\n\nCopyright (c) 2021 Ben Horton\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: \n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.'
@@ -8450,7 +8519,7 @@ return IconController</string>
 return text</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="65">
+            <Item class="ModuleScript" referent="67">
               <Properties>
                 <string name="Name">Maid</string>
                 <string name="Source">-- Maid
@@ -8609,7 +8678,7 @@ Maid.clean = Maid.doCleaning
 return Maid</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="66">
+            <Item class="ModuleScript" referent="68">
               <Properties>
                 <string name="Name">Signal</string>
                 <string name="Source">local HttpService = game:GetService("HttpService")
@@ -8723,7 +8792,7 @@ Signal.disconnect = Signal.Destroy
 return Signal</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="67">
+            <Item class="ModuleScript" referent="69">
               <Properties>
                 <string name="Name">Themes</string>
                 <string name="Source">-- Require all children and return their references
@@ -8735,7 +8804,7 @@ for _, module in pairs(script:GetChildren()) do
 end
 return Themes</string>
               </Properties>
-              <Item class="ModuleScript" referent="68">
+              <Item class="ModuleScript" referent="70">
                 <Properties>
                   <string name="Name">BlueGradient</string>
                   <string name="Source"><![CDATA[-- BlueGradient by ForeverHD
@@ -8782,7 +8851,7 @@ return {
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="69">
+              <Item class="ModuleScript" referent="71">
                 <Properties>
                   <string name="Name">Default</string>
                   <string name="Source">--[[
@@ -8912,7 +8981,7 @@ return {
                 </Properties>
               </Item>
             </Item>
-            <Item class="ModuleScript" referent="70">
+            <Item class="ModuleScript" referent="72">
               <Properties>
                 <string name="Name">TopbarPlusGui</string>
                 <string name="Source">-- SETUP ICON TEMPLATE
@@ -9257,7 +9326,7 @@ topbarPlusGui.Parent = playerGui
 return topbarPlusGui</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="71">
+            <Item class="ModuleScript" referent="73">
               <Properties>
                 <string name="Name">TopbarPlusReference</string>
                 <string name="Source">-- This module enables you to place Icon wherever you like within the data model while
@@ -9291,22 +9360,22 @@ end
 return TopbarPlusReference</string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="72">
+            <Item class="ModuleScript" referent="74">
               <Properties>
                 <string name="Name">VERSION</string>
                 <string name="Source">-- v2.7.5</string>
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="73">
+          <Item class="ModuleScript" referent="75">
             <Properties>
               <string name="Name">LICENSE</string>
-              <string name="Source">local LICENSE = 'Thank you for using Explorer Kura, an Explorers of the Metaverse (division of Scratcher Studios) product. This product is licensed under the Apache Version 2.0 license, in which the developers of the experience have agreed to by inserting Kura into this experience. In addition, the licenses of Kuras dependencies are also included as per their license agreements. The license terms are as follows. \n\nCopyright 2021 Explorers of the Metaverse\n\nLicensed under the Apache License, Version 2.0 (the "License");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n[redacted]\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an "AS IS" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.'
+              <string name="Source">local LICENSE = 'Thank you for using Explorer Kura, an Explorers of the Metaverse (division of Scratcher Studios) product. This product is licensed under the Apache Version 2.0 license, in which the developers of this experience have agreed to by inserting Kura into this experience. In addition, the licenses of Kuras dependencies are also included as per their license agreements. The license terms of Explorer Kura is as follows. \n\nCopyright 2021 Explorers of the Metaverse\n\nLicensed under the Apache License, Version 2.0 (the "License");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n[redacted]\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an "AS IS" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.'
 
 return LICENSE</string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="74">
+          <Item class="ModuleScript" referent="76">
             <Properties>
               <string name="Name">LocatorsClient</string>
               <string name="Source">local obj = {}
@@ -9405,12 +9474,12 @@ return obj</string>
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="75">
+  <Item class="Workspace" referent="77">
     <Properties>
       <string name="Name">Workspace</string>
       <bool name="FilteringEnabled">true</bool>
     </Properties>
-    <Item class="Part" referent="76">
+    <Item class="Part" referent="78">
       <Properties>
         <string name="Name">Baseplate</string>
         <bool name="Anchored">true</bool>

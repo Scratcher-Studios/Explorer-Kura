@@ -83,9 +83,11 @@ RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
                         PlayerTeleportTargets[arg.Target]:TeleportTo(PlayerTeleportTargets[player])
                     end
                 elseif arg.Action == "Mute" then
-                    MutedPlayers[player]:Mute()
+                    MutedPlayers[arg.Player]:Mute()
+                    RE:FireClient(player, {"UpdateMutedState", arg.Player, true})
                 elseif arg.Action == "Unmute" then
-                    MutedPlayers[player]:Unmute()
+                    MutedPlayers[arg.Player]:Unmute()
+                    RE:FireClient(player, {"UpdateMutedState", arg.Player, false})
                 else
                     error("Action arg " ..arg.Action .." not found.")
                 end

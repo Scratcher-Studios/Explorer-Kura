@@ -6,7 +6,6 @@ local obj = {}
 obj.__index = obj
 local Players = game:GetService("Players")
 local Maid = require(script.Parent.Maid)
-local TeleportObjTable = table.create(Players.MaxPlayers)
 
 local USE_PIVOTTO = false -- I'll work on this eventually
 

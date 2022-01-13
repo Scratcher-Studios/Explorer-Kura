@@ -24,7 +24,7 @@ local Icon
 local Fusion = require(script.Fusion)
 State = Fusion.State
 
-local LocalKuraVersionState = State {MajorVersionNumber = 0; MinorVersionNumber = 0; PatchNumber = 0;}
+local LocalKuraVersionState = State {MajorVersionNumber = 0; MinorVersionNumber = 1; PatchNumber = 0;}
 
 local TInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut, 1, false, 0) -- repeatCount should be 0 but it is 1 otherwise Fusion borkes itself
 

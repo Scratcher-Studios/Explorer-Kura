@@ -26,19 +26,19 @@ function obj.New(Target)
     return self
 end
 
-function obj:ShowLocator(isEducatorRequesting, educator)
-    if not isEducatorRequesting then
-        RE:FireClient(self.Target, {"ShowLocator"})
+function obj:ShowLocator(isEducatorRequesting, educator, isEducatorRequestingSelf)
+    RE:FireClient(self.Target, {"ShowLocator"})
+    if not isEducatorRequestingSelf then
+        RE:FireClient(educator, {"ShowLocator", self.Target})
     end
-    RE:FireClient(educator, {"ShowLocator", self.Target})
     self.LocatorShown = true
 end
 
-function obj:HideLocator(isEducatorRequesting, educator)
-    if not isEducatorRequesting then
-        RE:FireClient(self.Target, {"HideLocator"})
+function obj:HideLocator(isEducatorRequesting, educator, isEducatorRequestingSelf)
+    RE:FireClient(self.Target, {"HideLocator"})
+    if not isEducatorRequestingSelf then
+        RE:FireClient(educator, {"HideLocator", self.Target})
     end
-    RE:FireClient(educator, {"HideLocator", self.Target})
     self.LocatorShown = false
 end
 

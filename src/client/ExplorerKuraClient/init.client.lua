@@ -19,6 +19,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GroupService = game:GetService("GroupService")
 local StarterGui = game:GetService("StarterGui")
 local Players = game:GetService("Players")
+local Debris = game:GetService("Debris")
 
 -- Gets whatever instance of TopbarPlus is currently initialised. If not, start initialising it's own.
 local Icon
@@ -31,8 +32,16 @@ else
     error("TopbarPlus not detected. Unable to initialise Kura.")
 end
 
+-- The Fusion module bundled will always be used as Fusion is currently in pre-release.
 local Fusion = require(script.Fusion)
-State = Fusion.State
+
+local Children = Fusion.Children
+local OnEvent = Fusion.OnEvent
+local OnChange = Fusion.OnChange
+local State = Fusion.State
+local Computed = Fusion.Computed
+local ComputedPairs = Fusion.ComputedPairs
+local FusionTween = Fusion.Tween
 
 local LocalKuraVersionState = State {MajorVersionNumber = 0; MinorVersionNumber = 0; PatchNumber = 0;}
 
@@ -414,7 +423,6 @@ local function SetupKura()
         end,
         -- Destructor
         function(frame)
-            local Debris = game:GetService("Debris")
             Debris:AddItem(frame)
             local player = frame.PlayerObj.Value
             local MutedPlayers = CopyDict(MutedPlayersState:get())

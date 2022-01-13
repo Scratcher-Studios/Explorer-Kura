@@ -104,22 +104,31 @@ RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
                     QuickActionsServerEvents[arg[1]](player, {["TeleportTargets"] = PlayerTeleportTargets; ["MutedPlayers"] = MutedPlayers; ["Locators"] = Locators;},arg[2])
                 end
             end  
-        elseif command == "ShowLocators" then
-            if Educator == player and typeof(arg) == "table" then
-                if arg[1]:IsA("Player") then
+        end
+    end
+    if command == "ShowLocators" then
+        if Educator == player and typeof(arg) == "table" then
+            if Locators[arg[1]] then
+                if Locators[arg[1]] == Educator then
+                    Locators[arg[1]]:ShowLocator(true, Educator, true)
+                else
                     Locators[arg[1]]:ShowLocator(true, Educator)
                 end
-            else
-                Locators[player]:ShowLocator(false, Educator)
             end
-        elseif command == "HideLocators" then
-            if Educator == player and arg[1] then
-                if arg[1]:IsA("Player") then
+        else
+            Locators[player]:ShowLocator(false, Educator)
+        end
+    elseif command == "HideLocators" then
+        if Educator == player and arg[1] then
+            if Locators[arg[1]] then
+                if Locators[arg[1]] == Educator then
+                    Locators[arg[1]]:HideLocator(true, Educator, true)
+                else
                     Locators[arg[1]]:HideLocator(true, Educator)
                 end
-            else
-                Locators[player]:HideLocator(false, Educator)
             end
+        else
+            Locators[player]:HideLocator(false, Educator)
         end
     end
 end)
@@ -131,7 +140,9 @@ RF.Parent = ReplicatedStorage
 RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
     if command == "CanUseKura" then
         if typeof(TESTING_MODE) == "number" then
-            Educator = player
+            if TESTING_MODE == 1 then
+                Educator = player
+            end
             return if TESTING_MODE == 0 then false else TESTING_MODE
         else
             if Educator == player then

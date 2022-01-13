@@ -1,16 +1,18 @@
 local obj = {}
 obj.__index = obj
 local Players = game:GetService("Players")
-local Fusion = require(script.Parent.Fusion)
 local CharacterConnections = table.create(Players.MaxPlayers)
-local KuraRE = game:GetService("ReplicatedStorage").KuraRE
+
+local Fusion = require(script.Parent.Fusion)
+local New = Fusion.New
+local Children = Fusion.Children
 
 function obj.New()
 	local self = table.create(Players.MaxPlayers)
 	local function OnPlayerAdded(player)
 		local function AddGui()
 			local rootpart = player.Character:WaitForChild("HumanoidRootPart")
-			local BillboardGui = Fusion.New "BillboardGui" {
+			local BillboardGui = New "BillboardGui" {
 				Parent = rootpart;
 				ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
 				AlwaysOnTop = true;
@@ -19,8 +21,8 @@ function obj.New()
 				Size = UDim2.fromOffset(150, 100);
 				StudsOffsetWorldSpace = Vector3.new(0, 5, 0);
 				Enabled = false;
-				[Fusion.Children] = {
-					Fusion.New "ImageLabel" {
+				[Children] = {
+					New "ImageLabel" {
 						AnchorPoint = Vector2.new(0.5, 0);
 						BackgroundColor3 = Color3.new(1, 1, 1);
 						BackgroundTransparency = 1;
@@ -29,7 +31,7 @@ function obj.New()
 						Image = "rbxassetid://8127902577";
 						ScaleType = Enum.ScaleType.Fit;
 					};
-					Fusion.New "TextLabel" {
+					New "TextLabel" {
 						AnchorPoint = Vector2.new(0.5, 1);
 						BackgroundColor3 = Color3.new(1, 1, 1);
 						BackgroundTransparency = 1;

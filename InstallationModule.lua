@@ -1,7 +1,7 @@
 --[[
     EXPLORER KURA VERSION 0.1.0
     Thank you for choosing to install Explorer Kura.
-    To install, please parent this script to Workspace, select this entire script (Ctrl+A), copy into the Command Bar (bar at the
+    To install, please parent this script to Workspace, select the contents of this script (Ctrl+A), copy into the Command Bar (bar at the
     bottom of your screen) and hit Enter to run the script.
     To uninstall, delete all instances starting with "ExplorerKura".
 ]]

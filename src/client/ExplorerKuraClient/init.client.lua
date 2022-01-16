@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2021 Explorers of the Metaverse
+Copyright 2022 Explorers of the Metaverse
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ local Computed = Fusion.Computed
 local ComputedPairs = Fusion.ComputedPairs
 local FusionTween = Fusion.Tween
 
-local LocalKuraVersionState = State {MajorVersionNumber = 0; MinorVersionNumber = 0; PatchNumber = 0;}
+local LocalKuraVersionState = State("dev")-- State({MajorVersionNumber = 0; MinorVersionNumber = 0; PatchNumber = 0;})
 
 local TInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut, 1, false, 0) -- repeatCount should be 0 but it is 1 otherwise Fusion borkes itself
 

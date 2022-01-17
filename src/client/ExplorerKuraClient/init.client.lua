@@ -42,6 +42,7 @@ local State = Fusion.State
 local Computed = Fusion.Computed
 local ComputedPairs = Fusion.ComputedPairs
 local FusionTween = Fusion.Tween
+local New = Fusion.New
 
 local LocalKuraVersionState = State("dev")-- State({MajorVersionNumber = 0; MinorVersionNumber = 0; PatchNumber = 0;})
 
@@ -91,7 +92,7 @@ local QuickActionsInvokes = {}
 local FULL_SCREEN_ANNOUNCEMENT_WAIT = 5
 local BODY_TEXT_SIZE = 11
 
-local ScreenGui = Fusion.New "ScreenGui" {
+local ScreenGui = New "ScreenGui" {
     DisplayOrder = 1000;
     IgnoreGuiInset = false;
     Name = "ExplorerKuraGui";
@@ -100,13 +101,13 @@ local ScreenGui = Fusion.New "ScreenGui" {
 }
 
 local function CreateUICorner()
-    return Fusion.New "UICorner" {
+    return New "UICorner" {
         CornerRadius = UDim.new(0, 5)
     };
 end
 
 local function CreateUIPadding()
-    return Fusion.New "UIPadding" {
+    return New "UIPadding" {
         PaddingTop = UDim.new(0, 5);
         PaddingBottom = UDim.new(0, 5);
         PaddingLeft = UDim.new(0, 5);
@@ -118,16 +119,16 @@ local ContainerPosition = State(UDim2.new(0.5, 0, -1, 0))
 
 local RaiseHandButton
 
-local ExplorerKuraContainer = Fusion.New "Frame" {
+local ExplorerKuraContainer = New "Frame" {
     Name = "ExplorerKuraContainer";
     Size = UDim2.new(0.5, 0, 0.5, 0);
     AnchorPoint = Vector2.new(0.5, 0);
-    Position = Fusion.Tween(ContainerPosition, TInfo);
+    Position = FusionTween(ContainerPosition, TInfo);
     BackgroundTransparency = 1;
     Visible = true;
     Parent = ScreenGui;
-    [Fusion.Children] = {
-        Fusion.New "Frame" {
+    [Children] = {
+        New "Frame" {
             Name = "Topbar";
             Size = UDim2.new(1, 0, 0, 30);
             AnchorPoint = Vector2.new(0.5, 0);
@@ -135,8 +136,8 @@ local ExplorerKuraContainer = Fusion.New "Frame" {
             BackgroundColor3 = Color3.fromRGB(0, 0, 0);
             BorderSizePixel = 0;
             Visible = true;
-            [Fusion.Children] = {
-                Fusion.New("UIListLayout") {
+            [Children] = {
+                New("UIListLayout") {
                     Padding = UDim.new(0, 5);
                     FillDirection = Enum.FillDirection.Horizontal;
                     HorizontalAlignment = Enum.HorizontalAlignment.Center;
@@ -148,13 +149,13 @@ local ExplorerKuraContainer = Fusion.New "Frame" {
 }
 
 local function CreateSection(props)
-    return Fusion.New "ScrollingFrame" {
+    return New "ScrollingFrame" {
         Name = props.Name;
         Size = UDim2.new(1, 0, 1, -30);
         AnchorPoint = Vector2.new(0.5, 0);
         Position = UDim2.new(0.5, 0, 0, 30);
         Parent = ExplorerKuraContainer;
-        Visible = Fusion.Computed(function()
+        Visible = Computed(function()
             if CurrentTab:get() == props.Name then
                 return true
             else
@@ -169,49 +170,49 @@ local function CreateSection(props)
         VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar;
         ScrollBarThickness = 3;
         ScrollBarImageColor3 = Color3.fromRGB(70, 70, 70)
-    }, Fusion.New "TextButton" {
+    }, New "TextButton" {
         Text = "";
         Name = props.Name;
         Size = UDim2.new(0.25, -5, 1, -5);
         Parent = ExplorerKuraContainer.Topbar;
         BackgroundTransparency = 0;
         AutoButtonColor = true;
-        BackgroundColor3 = Fusion.Computed(function()
+        BackgroundColor3 = Computed(function()
             if CurrentTab:get() == props.Name then
-                return Fusion.Tween(WhiteState, TInfo):get()
+                return FusionTween(WhiteState, TInfo):get()
             else
-                return Fusion.Tween(GreyState, TInfo):get()
+                return FusionTween(GreyState, TInfo):get()
             end
         end);
-        [Fusion.Children] = {
-            Fusion.New "UIListLayout" {
+        [Children] = {
+            New "UIListLayout" {
                 FillDirection = Enum.FillDirection.Horizontal;
                 Padding = UDim.new(0, 5);
                 HorizontalAlignment = Enum.HorizontalAlignment.Center;
                 VerticalAlignment = Enum.VerticalAlignment.Center;
             },
             CreateUICorner();
-            Fusion.New "UIPadding" {
+            New "UIPadding" {
                 PaddingTop = UDim.new(0, 5);
                 PaddingBottom = UDim.new(0, 5);
                 -- PaddingLeft = UDim.new(0,5);
                 -- PaddingRight = UDim.new(0,5);
             },
-            Fusion.New "ImageLabel" {
+            New "ImageLabel" {
                 Size = UDim2.new(1, 0, 1, 0);
                 SizeConstraint = Enum.SizeConstraint.RelativeYY;
                 Image = props.Image;
                 BackgroundTransparency = 1;
                 LayoutOrder = 1;
-                ImageColor3 = Fusion.Computed(function()
+                ImageColor3 = Computed(function()
                     if CurrentTab:get() == props.Name then
-                        return Fusion.Tween(BlackState, TInfo):get()
+                        return FusionTween(BlackState, TInfo):get()
                     else
-                        return Fusion.Tween(WhiteState, TInfo):get()
+                        return FusionTween(WhiteState, TInfo):get()
                     end
                 end)
             },
-            Fusion.New "TextLabel" {
+            New "TextLabel" {
                 BackgroundTransparency = 1;
                 TextScaled = true;
                 LayoutOrder = 2;
@@ -219,16 +220,16 @@ local function CreateSection(props)
                 Text = props.Name;
                 Size = UDim2.new(0, 0, 1, 0);
                 AutomaticSize = Enum.AutomaticSize.X;
-                TextColor3 = Fusion.Computed(function()
+                TextColor3 = Computed(function()
                     if CurrentTab:get() == props.Name then
-                        return Fusion.Tween(BlackState, TInfo):get()
+                        return FusionTween(BlackState, TInfo):get()
                     else
-                        return Fusion.Tween(WhiteState, TInfo):get()
+                        return FusionTween(WhiteState, TInfo):get()
                     end
                 end)
             }
         },
-        [Fusion.OnEvent("Activated")] = function()
+        [OnEvent("Activated")] = function()
             CurrentTab:set(props.Name)
         end
     }
@@ -266,7 +267,7 @@ local function SetupKura()
             Image = "rbxassetid://8127902797"
         })
         -- Players Frame
-        Fusion.New "UIListLayout" {
+        New "UIListLayout" {
             Padding = UDim.new(0, 5);
             SortOrder = Enum.SortOrder.LayoutOrder;
             FillDirection = Enum.FillDirection.Vertical;
@@ -282,22 +283,22 @@ local function SetupKura()
         Players.PlayerRemoving:Connect(UpdatePlayerListState)
         UpdatePlayerListState()
 
-        local PlayerFrames = Fusion.ComputedPairs(PlayerListState, 
+        local PlayerFrames = ComputedPairs(PlayerListState, 
         -- Processor
         function(_, player)
-            return State(Fusion.New "Frame" {
+            return State(New "Frame" {
                 BackgroundColor3 = BlackState;
                 Size = UDim2.new(1, -10, 0, 40);
                 BorderSizePixel = 0;
                 Name = player.UserId;
                 Parent = PlayersFrame;
-                [Fusion.Children] = {
+                [Children] = {
                     CreateUICorner();
-                    Fusion.New "ObjectValue" {
+                    New "ObjectValue" {
                         Name = "PlayerObj";
                         Value = player;
                     };
-                    Fusion.New "ImageLabel" {
+                    New "ImageLabel" {
                         Image = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48);
                         BackgroundTransparency = 1;
                         SizeConstraint = Enum.SizeConstraint.RelativeYY;
@@ -307,7 +308,7 @@ local function SetupKura()
                         Position = UDim2.new(0,5,0.5,0);
                         Name = "PlayerImage";
                     };
-                    Fusion.New "TextLabel" {
+                    New "TextLabel" {
                         Text = player.DisplayName;
                         TextColor3 = WhiteState;
                         Font = Enum.Font.Gotham;
@@ -319,37 +320,37 @@ local function SetupKura()
                         TextScaled = true;
                         Name = "PlayerName";
                     };
-                    Fusion.New "Frame" {
+                    New "Frame" {
                         Name = "ButtonFrames";
                         Size = UDim2.new(0.5,0,1,-10);
                         AnchorPoint = Vector2.new(1, 0.5);
                         Position = UDim2.new(1,-5,0.5,0);
                         BackgroundTransparency = 1;
-                        [Fusion.Children] = {
-                            Fusion.New "UIListLayout" {
+                        [Children] = {
+                            New "UIListLayout" {
                                 Padding = UDim.new(0, 5);
                                 SortOrder = Enum.SortOrder.LayoutOrder;
                                 FillDirection = Enum.FillDirection.Horizontal;
                                 HorizontalAlignment = Enum.HorizontalAlignment.Right;
                                 VerticalAlignment = Enum.VerticalAlignment.Center;
                             };
-                            Fusion.New "ImageButton" {
+                            New "ImageButton" {
                                 SizeConstraint = Enum.SizeConstraint.RelativeYY;
                                 Size = UDim2.new(1,0,1,0);
                                 Name = "Locator";
                                 Image = "rbxassetid://8127902577";
-                                BackgroundColor3 = Fusion.Computed(function()
+                                BackgroundColor3 = Computed(function()
                                     local array = CopyDict(LocatorShownState:get())
                                     if table.find(array, player) then
-                                        return Fusion.Tween(State(Color3.fromRGB(200, 0, 0)), TInfo):get()
+                                        return FusionTween(State(Color3.fromRGB(200, 0, 0)), TInfo):get()
                                     else
-                                        return Fusion.Tween(GreyState, TInfo):get()
+                                        return FusionTween(GreyState, TInfo):get()
                                     end
                                 end);
-                                [Fusion.Children] = {
+                                [Children] = {
                                     CreateUICorner();
                                 };
-                                [Fusion.OnEvent "Activated"] = function()
+                                [OnEvent "Activated"] = function()
                                     local array = CopyDict(LocatorShownState:get())
                                     if table.find(array, player) then
                                         KuraRE:FireServer("HideLocators", {player})
@@ -358,11 +359,11 @@ local function SetupKura()
                                     end
                                 end;
                             };
-                            Fusion.New "ImageButton" {
+                            New "ImageButton" {
                                 SizeConstraint = Enum.SizeConstraint.RelativeYY;
                                 Size = UDim2.new(1,0,1,0);
                                 Name = "Chat";
-                                Image = Fusion.Computed(function()
+                                Image = Computed(function()
                                     local array = CopyDict(MutedPlayersState:get()) -- See Elttob/Fusion issue #78 to see why I have to do this
                                     if table.find(array, player) then
                                         return "rbxassetid://8127902088"
@@ -370,18 +371,18 @@ local function SetupKura()
                                         return "rbxassetid://8127903374"
                                     end
                                 end);
-                                BackgroundColor3 = Fusion.Computed(function()
+                                BackgroundColor3 = Computed(function()
                                     local array = CopyDict(MutedPlayersState:get())
                                     if table.find(array, player) then
-                                        return Fusion.Tween(State(Color3.fromRGB(200, 0, 0)), TInfo):get()
+                                        return FusionTween(State(Color3.fromRGB(200, 0, 0)), TInfo):get()
                                     else
-                                        return Fusion.Tween(GreyState, TInfo):get()
+                                        return FusionTween(GreyState, TInfo):get()
                                     end
                                 end);
-                                [Fusion.Children] = {
+                                [Children] = {
                                     CreateUICorner();
                                 };
-                                [Fusion.OnEvent "Activated"] = function()
+                                [OnEvent "Activated"] = function()
                                     local array = CopyDict(MutedPlayersState:get())
                                     if table.find(array, player) then
                                         KuraRE:FireServer("PlayerFrames", {Action = "Unmute"; Player = player})
@@ -390,29 +391,29 @@ local function SetupKura()
                                     end
                                 end;
                             };
-                            Fusion.New "ImageButton" {
+                            New "ImageButton" {
                                 SizeConstraint = Enum.SizeConstraint.RelativeYY;
                                 Size = UDim2.new(1,0,1,0);
                                 Name = "TeleportTo";
                                 Image = "rbxassetid://8188131920";
                                 BackgroundColor3 = GreyState;
-                                [Fusion.Children] = {
+                                [Children] = {
                                     CreateUICorner();
                                 };
-                                [Fusion.OnEvent "Activated"] = function()
+                                [OnEvent "Activated"] = function()
                                     KuraRE:FireServer("PlayerFrames", {Action = "TeleportTo"; Target = player})
                                 end;
                             };
-                            Fusion.New "ImageButton" {
+                            New "ImageButton" {
                                 SizeConstraint = Enum.SizeConstraint.RelativeYY;
                                 Size = UDim2.new(1,0,1,0);
                                 Name = "TeleportFrom";
                                 Image = "rbxassetid://8188132131";
                                 BackgroundColor3 = GreyState;
-                                [Fusion.Children] = {
+                                [Children] = {
                                     CreateUICorner();
                                 };
-                                [Fusion.OnEvent "Activated"] = function()
+                                [OnEvent "Activated"] = function()
                                     KuraRE:FireServer("PlayerFrames", {Action = "TeleportFrom"; Target = player})
                                 end;
                             };
@@ -438,7 +439,7 @@ local function SetupKura()
         end
     )
         -- Quick Actions Frame
-        Fusion.New "UIGridLayout" {
+        New "UIGridLayout" {
             CellPadding = UDim2.new(0,5,0,5);
             CellSize = UDim2.new(0.25,-5,0,50);
             StartCorner = Enum.StartCorner.TopLeft;
@@ -448,23 +449,23 @@ local function SetupKura()
         QuickActionGridPadding.Parent = QuickActionsFrame
         local QuickActionsArray = KuraRF:InvokeServer("QuickActions", {ActionType = "RequestActionList"})
         if QuickActionsArray then
-            local QuickActionButtons = Fusion.ComputedPairs(QuickActionsArray,
+            local QuickActionButtons = ComputedPairs(QuickActionsArray,
             -- Processor
             function(name: string, ActionTable)
                 local onState = State(ActionTable.DefaultState or false)
-                local button = Fusion.New "TextButton" {
-                    BackgroundColor3 = Fusion.Computed(function()
+                local button = New "TextButton" {
+                    BackgroundColor3 = Computed(function()
                         if onState:get() then
-                            return Fusion.Tween(WhiteState, TInfo):get()
+                            return FusionTween(WhiteState, TInfo):get()
                         else
-                            return Fusion.Tween(GreyState, TInfo):get()
+                            return FusionTween(GreyState, TInfo):get()
                         end
                     end);
                     Text = "";
                     Parent = QuickActionsFrame;
-                    [Fusion.Children] = {
-                        Fusion.New "TextLabel" {
-                            Text = Fusion.Computed(function()
+                    [Children] = {
+                        New "TextLabel" {
+                            Text = Computed(function()
                                 if typeof(ActionTable.FriendlyName) == "string" then
                                     return ActionTable.FriendlyName
                                 elseif typeof(ActionTable.FriendlyName) == "table" then
@@ -482,11 +483,11 @@ local function SetupKura()
                                 return ActionTable.Script
                             end);
                             TextScaled = true;
-                            TextColor3 = Fusion.Computed(function()
+                            TextColor3 = Computed(function()
                                 if onState:get() then
-                                    return Fusion.Tween(BlackState, TInfo):get()
+                                    return FusionTween(BlackState, TInfo):get()
                                 else
-                                    return Fusion.Tween(WhiteState, TInfo):get()
+                                    return FusionTween(WhiteState, TInfo):get()
                                 end
                             end);
                             BackgroundTransparency = 1;
@@ -495,17 +496,17 @@ local function SetupKura()
                             Position = UDim2.new(1,0,0.5,0);
                             Size = UDim2.new(1,-50,1,0);
                         };
-                        Fusion.New "ImageLabel" {
+                        New "ImageLabel" {
                             Image = ActionTable.Image;
                             BackgroundTransparency = 1;
                             SizeConstraint = Enum.SizeConstraint.RelativeYY;
                             Size = UDim2.new(1,0,1,0);
                             ScaleType = Enum.ScaleType.Fit;
-                            ImageColor3 = Fusion.Computed(function()
+                            ImageColor3 = Computed(function()
                                 if onState:get() then
-                                    return Fusion.Tween(BlackState, TInfo):get()
+                                    return FusionTween(BlackState, TInfo):get()
                                 else
-                                    return Fusion.Tween(WhiteState, TInfo):get()
+                                    return FusionTween(WhiteState, TInfo):get()
                                 end
                             end);
                             AnchorPoint = Vector2.new(0,0.5);
@@ -514,7 +515,7 @@ local function SetupKura()
                         CreateUIPadding();
                         CreateUICorner();
                     };
-                    [Fusion.OnEvent("Activated")] = function()
+                    [OnEvent "Activated"] = function()
                         local Module = ReplicatedStorage.ExplorerKuraQuickActions:FindFirstChild(ActionTable.Script)
                         local Action = require(Module)
                         local OnStateResult: boolean|nil, FireServer: any = Action.ClientFunction(onState:get(), {["LocatorShownState"] = LocatorShownState; ["MutedPlayersState"] = MutedPlayersState;})
@@ -547,15 +548,15 @@ local function SetupKura()
                 task.wait(1)
                 SuccessState:set(2)
             end
-            local AnnouncementTemplate = Fusion.New "Frame" {
+            local AnnouncementTemplate = New "Frame" {
                 Size = UDim2.new(1,0,0.5,0);
                 BackgroundTransparency = 1;
                 AnchorPoint = Vector2.new(0.5,0);
                 Name = title;
                 Parent = AnnouncementsFrame;
                 Visible = true;
-                [Fusion.Children] = {
-                    Fusion.New "TextLabel" {
+                [Children] = {
+                    New "TextLabel" {
                         AnchorPoint = Vector2.new(0.5,0.5);
                         Position = UDim2.new(0.5,0,0.15,0);
                         Size = UDim2.new(1,0,0.3,0);
@@ -567,7 +568,7 @@ local function SetupKura()
                         BackgroundTransparency = 1;
                         TextXAlignment = Enum.TextXAlignment.Left;
                     };
-                    Fusion.New "TextBox" {
+                    New "TextBox" {
                         Name = "TextBox";
                         BackgroundColor3 = GreyState;
                         TextColor3 = WhiteState;
@@ -584,8 +585,8 @@ local function SetupKura()
                         TextYAlignment = Enum.TextYAlignment.Top;
                         TextSize = BODY_TEXT_SIZE;
                         TextWrapped = true;
-                        [Fusion.Children] = {
-                            Fusion.New "ImageButton" {
+                        [Children] = {
+                            New "ImageButton" {
                                 Size = UDim2.new(0, 30, 0, 30);
                                 AnchorPoint = Vector2.new(1,1);
                                 Position = UDim2.new(1,-5,1,-5);
@@ -593,27 +594,27 @@ local function SetupKura()
                                 ImageColor3 = BlackState;
                                 ZIndex = 2;
                                 AutoButtonColor = true;
-                                BackgroundColor3 = Fusion.Computed(function()
+                                BackgroundColor3 = Computed(function()
                                     if SuccessState:get() == 2 then
-                                        return Fusion.Tween(WhiteState, TInfo):get()
+                                        return FusionTween(WhiteState, TInfo):get()
                                     elseif SuccessState:get() == 0 then
-                                        return Fusion.Tween(State(Color3.fromRGB(0,200,0)), TInfo):get()
+                                        return FusionTween(State(Color3.fromRGB(0,200,0)), TInfo):get()
                                     elseif SuccessState:get() == 1 then
-                                        return Fusion.Tween(State(Color3.fromRGB(200,0,0)), TInfo):get()
+                                        return FusionTween(State(Color3.fromRGB(200,0,0)), TInfo):get()
                                     end
                                 end);
-                                [Fusion.Children] = {CreateUICorner()};
-                                [Fusion.OnEvent("Activated")] = SendMessage;
+                                [Children] = {CreateUICorner()};
+                                [OnEvent "Activated" ] = SendMessage;
                             };
                             CreateUICorner();
                             CreateUIPadding();
                         };
-                        [Fusion.OnEvent("FocusLost")] = function(enterPressed)
+                        [OnEvent "FocusLost" ] = function(enterPressed)
                             if enterPressed then
                                 SendMessage()
                             end
                         end;
-                        [Fusion.OnChange("Text")] = function(text)
+                        [OnChange "Text" ] = function(text)
                             MessageBoxState:set(text)
                         end
                     };
@@ -627,7 +628,7 @@ local function SetupKura()
         local FullScreenFrame = MessageBoxFrame("Full Screen Announcement", "Message that temporarily covers the whole screen for " ..tostring(FULL_SCREEN_ANNOUNCEMENT_WAIT) .." seconds.")
         FullScreenFrame.Position = UDim2.new(0.5,0,0.5,0)
         -- About Frame
-        Fusion.New "UIListLayout" {
+        New "UIListLayout" {
             Padding = UDim.new(0, 5);
             SortOrder = Enum.SortOrder.LayoutOrder;
             FillDirection = Enum.FillDirection.Vertical;
@@ -635,7 +636,7 @@ local function SetupKura()
             VerticalAlignment = Enum.VerticalAlignment.Center;
             Parent = AboutFrame;
         };
-        Fusion.New "ImageLabel" {
+        New "ImageLabel" {
             BackgroundColor3 = BlackState,
             Size = UDim2.new(1, -10, 0, 100);
             BorderSizePixel = 0;
@@ -644,29 +645,29 @@ local function SetupKura()
             Name = "KuraLogo";
             LayoutOrder = 1;
             Parent = AboutFrame;
-            [Fusion.Children] = {
+            [Children] = {
                 CreateUICorner()
             }
         };
-        Fusion.New "TextLabel" {
+        New "TextLabel" {
             BackgroundColor3 = BlackState;
             Size = UDim2.new(1, -10, 0, 20);
             BorderSizePixel = 0;
             Name = "VersionText";
-            Text = Fusion.Computed(function()
+            Text = Computed(function()
                 local LocalCurrentKuraVersion = LocalKuraVersionState:get()
                 local LatestKuraVersion = KuraRF:InvokeServer("LatestKuraVersion")
                 local TriggerUpdate = LatestKuraVersion.TriggerUpdate
                 local function CreateWarning(props)
-                    return Fusion.New "Frame" {
+                    return New "Frame" {
                         BackgroundColor3 = props.Colour;
                         BorderSizePixel = 0;
                         Size = UDim2.new(1,-10,0,30);
                         Parent = AboutFrame;
                         LayoutOrder = 3;
-                        [Fusion.Children] = {
+                        [Children] = {
                             CreateUICorner();
-                            Fusion.New "ImageLabel" {
+                            New "ImageLabel" {
                                 SizeConstraint = Enum.SizeConstraint.RelativeYY;
                                 Size = UDim2.new(1,0,1,0);
                                 AnchorPoint = Vector2.new(0,0.5);
@@ -675,7 +676,7 @@ local function SetupKura()
                                 Image = "rbxassetid://8127902797";
                                 BackgroundTransparency = 1;
                             };
-                            Fusion.New "TextLabel" {
+                            New "TextLabel" {
                                 Size = UDim2.new(1,-35,1,0);
                                 AnchorPoint = Vector2.new(0,0.5);
                                 Position = UDim2.new(0,35,0.5,0);
@@ -714,13 +715,13 @@ local function SetupKura()
             TextScaled = true;
             LayoutOrder = 2;
             Parent = AboutFrame;
-            [Fusion.Children] = {
+            [Children] = {
                 CreateUICorner();
                 CreateUIPadding();
             }
         };
         local function License(props)
-            return Fusion.New "TextLabel" {
+            return New "TextLabel" {
                 BackgroundColor3 = BlackState;
                 Size = UDim2.new(1, -10, 0, 30);
                 BorderSizePixel = 0;
@@ -734,7 +735,7 @@ local function SetupKura()
                 TextScaled = true;
                 LayoutOrder = props.LayoutOrder;
                 Parent = AboutFrame;
-                [Fusion.Children] = {
+                [Children] = {
                     CreateUICorner();
                     CreateUIPadding();
                 }
@@ -748,7 +749,7 @@ local function SetupKura()
         })
         PlaceholderButton:Destroy()
         CurrentTab:set("placeholder")
-        Fusion.New "ImageLabel" {
+        New "ImageLabel" {
             Image = "rbxassetid://8167395582";
             BackgroundTransparency = 1;
             Size = UDim2.new(0.9, 0, 0.5, 0);
@@ -779,23 +780,23 @@ end
 
 -- Set up the announcement frames so everyone can see
 local FullScreenAnnouncementFrameAppearence = State(false)
-local FullScreenAnnouncementFrame = Fusion.New "Frame" {
+local FullScreenAnnouncementFrame = New "Frame" {
     Parent = ScreenGui;
     ZIndex = 2003;
     Visible = true;
     BackgroundColor3 = BlackState;
-    BackgroundTransparency = Fusion.Computed(function()
+    BackgroundTransparency = Computed(function()
         if FullScreenAnnouncementFrameAppearence:get() then
-            return Fusion.Tween(State(0.3), TInfo):get()
+            return FusionTween(State(0.3), TInfo):get()
         else
-            return Fusion.Tween(State(1), TInfo):get()
+            return FusionTween(State(1), TInfo):get()
         end
     end);
     Size = UDim2.new(1,0,1,40);
     Position = UDim2.new(0.5,0,0,-40);
     AnchorPoint = Vector2.new(0.5,0);
-    [Fusion.Children] = {
-        Fusion.New "TextLabel" {
+    [Children] = {
+        New "TextLabel" {
             ZIndex = 2004;
             Font = Enum.Font.GothamBlack;
             TextColor3 = WhiteState;
@@ -806,15 +807,15 @@ local FullScreenAnnouncementFrame = Fusion.New "Frame" {
             Position = UDim2.new(0.5,0,0,35);
             Size = UDim2.new(1,0,0, BODY_TEXT_SIZE);
             TextScaled = true;
-            TextTransparency = Fusion.Computed(function()
+            TextTransparency = Computed(function()
                 if FullScreenAnnouncementFrameAppearence:get() then
-                    return Fusion.Tween(State(0), TInfo):get()
+                    return FusionTween(State(0), TInfo):get()
                 else
-                    return Fusion.Tween(State(1), TInfo):get()
+                    return FusionTween(State(1), TInfo):get()
                 end
             end);
         };
-        Fusion.New "TextLabel" {
+        New "TextLabel" {
             ZIndex = 2004;
             Font = Enum.Font.Gotham;
             TextColor3 = WhiteState;
@@ -825,11 +826,11 @@ local FullScreenAnnouncementFrame = Fusion.New "Frame" {
             Position = UDim2.new(0.5,0,0.5,0);
             Size = UDim2.new(1,0,0,30);
             TextScaled = true;
-            TextTransparency = Fusion.Computed(function()
+            TextTransparency = Computed(function()
                 if FullScreenAnnouncementFrameAppearence:get() then
-                    return Fusion.Tween(State(0), TInfo):get()
+                    return FusionTween(State(0), TInfo):get()
                 else
-                    return Fusion.Tween(State(1), TInfo):get()
+                    return FusionTween(State(1), TInfo):get()
                 end
             end);
         };
@@ -837,29 +838,29 @@ local FullScreenAnnouncementFrame = Fusion.New "Frame" {
 }
 
 local TopbarAnnouncementFrameAppearence = State(false)
-local TopbarAnnouncementFrame = Fusion.New "Frame" {
+local TopbarAnnouncementFrame = New "Frame" {
     Parent = ScreenGui;
     ZIndex = 2000;
     Visible = true;
     BackgroundColor3 = BlackState;
-    BackgroundTransparency = Fusion.Computed(function()
+    BackgroundTransparency = Computed(function()
         if TopbarAnnouncementFrameAppearence:get() then
-            return Fusion.Tween(State(0.3), TInfo):get()
+            return FusionTween(State(0.3), TInfo):get()
         else
-            return Fusion.Tween(State(1), TInfo):get()
+            return FusionTween(State(1), TInfo):get()
         end
     end);
-    Size = Fusion.Computed(function()
+    Size = Computed(function()
         if TopbarAnnouncementFrameAppearence:get() then
-            return Fusion.Tween(State(UDim2.new(1,0,0,30)), TInfo):get()
+            return FusionTween(State(UDim2.new(1,0,0,30)), TInfo):get()
         else
-            return Fusion.Tween(State(UDim2.new(1,0,0,0)), TInfo):get()
+            return FusionTween(State(UDim2.new(1,0,0,0)), TInfo):get()
         end
     end);
     Position = UDim2.new(0.5,0,0,5);
     AnchorPoint = Vector2.new(0.5,0);
-    [Fusion.Children] = {
-        Fusion.New "TextLabel" {
+    [Children] = {
+        New "TextLabel" {
             ZIndex = 2001;
             Font = Enum.Font.Gotham;
             TextColor3 = WhiteState;
@@ -873,11 +874,11 @@ local TopbarAnnouncementFrame = Fusion.New "Frame" {
             TextSize = BODY_TEXT_SIZE;
             TextYAlignment = Enum.TextYAlignment.Center;
             TextXAlignment = Enum.TextXAlignment.Center;
-            TextTransparency = Fusion.Computed(function()
+            TextTransparency = Computed(function()
                 if TopbarAnnouncementFrameAppearence:get() then
-                    return Fusion.Tween(State(0), TInfo):get()
+                    return FusionTween(State(0), TInfo):get()
                 else
-                    return Fusion.Tween(State(1), TInfo):get()
+                    return FusionTween(State(1), TInfo):get()
                 end
             end);
         };

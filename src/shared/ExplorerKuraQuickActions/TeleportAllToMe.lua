@@ -21,7 +21,7 @@ end
 module.ServerEvent = function(player, ExplorerArgs)
     local TeleportTargets = ExplorerArgs.TeleportTargets
     local EducatorTeleportTarget = TeleportTargets[player]
-    for _, obj in ipairs(TeleportTargets) do
+    for player, obj in pairs(TeleportTargets) do
         obj:TeleportTo(EducatorTeleportTarget)
     end
 end

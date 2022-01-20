@@ -928,6 +928,9 @@ KuraRE.OnClientEvent:Connect(function(args)
             table.insert(LocatorsTable, LocalPlayer)
         end
         LocatorShownState:set(CopyDict(LocatorsTable))
+        if RaiseHandButton then
+            RaiseHandButton:select()
+        end
     elseif args[1] == "HideLocator" then
         local LocatorsTable = LocatorShownState:get()
         if args[2] then
@@ -942,6 +945,9 @@ KuraRE.OnClientEvent:Connect(function(args)
             end
         end
         LocatorShownState:set(CopyDict(LocatorsTable))
+        if RaiseHandButton then
+            RaiseHandButton:deselect()
+        end
     elseif args[1] == "UpdateMutedState" then
         local array = CopyDict(MutedPlayersState:get())
         if args[3] == true then

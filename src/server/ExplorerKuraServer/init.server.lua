@@ -23,7 +23,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GroupService = game:GetService("GroupService")
 local TextService = game:GetService("TextService")
 
-local TESTING_MODE = 1 -- Set to false or 0 to disable, or 1 for Educator or 2 for Student
+-- local TESTING_MODE = 1 -- Set to false or 0 to disable, or 1 for Educator or 2 for Student
 local PartyTable = table.create(Players.MaxPlayers)
 local Educator
 
@@ -139,6 +139,7 @@ RF.Parent = ReplicatedStorage
 
 RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
     if command == "CanUseKura" then
+        --[[
         if typeof(TESTING_MODE) == "number" then
             if TESTING_MODE == 1 then
                 Educator = player
@@ -157,6 +158,13 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
             else
                 return
             end
+        end
+        ]]
+        if not Educator then
+            Educator = player
+            return 1
+        else
+            return 2
         end
     elseif command == "LatestKuraVersion" then
         return require(8169284660)

@@ -68,7 +68,7 @@ local LocalPlayer = Players.LocalPlayer
 
 local ButtonsToggled = {}
 
-if not CanUse then script:Destroy() end
+-- if not CanUse then script:Destroy() end
 
 -- UI creation time!
 

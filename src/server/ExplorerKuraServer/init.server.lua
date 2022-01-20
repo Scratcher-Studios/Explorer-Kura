@@ -23,7 +23,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GroupService = game:GetService("GroupService")
 local TextService = game:GetService("TextService")
 
-local TESTING_MODE = 1 -- Set to false or 0 to disable, or 1 for Educator or 2 for Student
+local TESTING_MODE = 0 -- Set to false or 0 to disable, or 1 for Educator or 2 for Student
 local PartyTable = table.create(Players.MaxPlayers)
 local Educator
 
@@ -224,27 +224,16 @@ end
 local function PlayerJoinFunc(player: Player)
     local PlayerJoinData = player:GetJoinData()
     if PlayerJoinData.SourcePlaceId == 2901715109 or PlayerJoinData.SourcePlaceId == 3088421028 then
-        -- So they joined from an Explorer Place Id
-        if PlayerJoinData.TeleportData then
+        -- So they joined from an Explorer Place Id (THIS IS NOT FINAL)
+        if typeof(PlayerJoinData.TeleportData) == "table" then
             if PlayerJoinData.TeleportData.GroupJoinTeleport then
                 PartyTable = CopyDict(PlayerJoinData.TeleportData.GroupJoinPlayers)
-                for i, player in ipairs(PartyTable) do
-                    if i == 1 then
-                        Educator = player
-                    end
-                end
+                Educator = PartyTable[1]
             end
         end
     elseif game.PrivateServerId ~= 0 then
         if player.UserId == game.PrivateServerOwnerId then
             Educator = player
-        end
-    end
-    if Educator then
-        if Educator == player then
-            RE:Fire({"KuraSetup", 1})
-        else
-            RE:Fire({"KuraSetup", 2})
         end
     end
     coroutine.resume(coroutine.create(function()

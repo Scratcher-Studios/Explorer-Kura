@@ -55,7 +55,7 @@ function obj.New(Target)
     return self
 end
 
-function obj:TeleportTo(TeleportTarget: table)
+function obj:TeleportTo(TeleportTarget)
     -- Honestly I should do type checking here. But I have decided not to for laziness.
     if self.Target:IsA("Model") then
         if TeleportTarget then

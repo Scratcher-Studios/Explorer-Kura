@@ -2,6 +2,9 @@
 	@class LocatorsClient
 
 	Stores locator information client-side and displays locators.
+	:::caution
+	This module uses [Fusion](https://elttob.github.io/Fusion/). If using this module is used in another project, Fusion must be installed and the path to Fusion must be changed.
+	:::
 ]=]
 
 local obj = {}

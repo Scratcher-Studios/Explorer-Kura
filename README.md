@@ -4,18 +4,7 @@
 
 Explorer Kura is a module to allow educators to provide the best possible education experience to their students by providing a easy to use interface with actions that can be customised by the developer to suit the educator.
 
-This module is designed as a replacement for Roblox's Classroom Mode. Whilst the two can functionally coexist, why would you run two modules that have the same purpose at the same time?
-
-# Install
-## Roblox Model Catalogue
-Coming in v0.2.0.
-
-Only trust models released by EcoScratcher (with a verified shield next to the username) or the Explorers of the Metaverse group.
-
-The model contains an installation script which will install Kura into your experience. Copy and paste the script into the Roblox Studio command bar to install Kura.
-
-## Releases Page
-Visit the Releases page to get a .rbxm file containing an installation script which will install Kura into your experience. Copy and paste the script into the Roblox Studio command bar to install Kura.
+[Read the documentation](https://scratcher-studios.github.io/Explorer-Kura/)
 
 # Features
 - Nice to use interface

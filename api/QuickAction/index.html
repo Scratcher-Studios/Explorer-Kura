@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="generator" content="Docusaurus v2.0.0-beta.9">
+<title data-react-helmet="true">QuickAction | Explorer-Kura</title><meta data-react-helmet="true" property="og:title" content="QuickAction | Explorer-Kura"><meta data-react-helmet="true" name="twitter:card" content="summary_large_image"><meta data-react-helmet="true" name="description" content="Quick Actions provide an interface for the educator to control the experience of the class in your experience. From a single button press on the Quick Actions interface, the Educator can initiate actions to change the Experience.
+:::note
+This module relies on Kura Remote Events.
+:::"><meta data-react-helmet="true" property="og:description" content="Quick Actions provide an interface for the educator to control the experience of the class in your experience. From a single button press on the Quick Actions interface, the Educator can initiate actions to change the Experience.
+:::note
+This module relies on Kura Remote Events.
+:::"><meta data-react-helmet="true" property="og:url" content="https://Scratcher-Studios.github.io/Explorer-Kura/api/QuickAction"><meta data-react-helmet="true" name="docusaurus_locale" content="en"><meta data-react-helmet="true" name="docusaurus_tag" content="default"><link data-react-helmet="true" rel="canonical" href="https://Scratcher-Studios.github.io/Explorer-Kura/api/QuickAction"><link data-react-helmet="true" rel="alternate" href="https://Scratcher-Studios.github.io/Explorer-Kura/api/QuickAction" hreflang="en"><link data-react-helmet="true" rel="alternate" href="https://Scratcher-Studios.github.io/Explorer-Kura/api/QuickAction" hreflang="x-default"><link rel="stylesheet" href="/Explorer-Kura/assets/css/styles.71e0164d.css">
+<link rel="preload" href="/Explorer-Kura/assets/js/runtime~main.03af59af.js" as="script">
+<link rel="preload" href="/Explorer-Kura/assets/js/main.999c5d08.js" as="script">
+</head>
+<body>
+<script>!function(){function e(e){document.documentElement.setAttribute("data-theme",e)}var t=function(){var e=null;try{e=localStorage.getItem("theme")}catch(e){}return e}();null!==t?e(t):window.matchMedia("(prefers-color-scheme: dark)").matches?e("dark"):(window.matchMedia("(prefers-color-scheme: light)").matches,e("light"))}()</script><div id="__docusaurus">
+<div><a href="#" class="skipToContent_1oUP">Skip to main content</a></div><nav class="navbar navbar--fixed-top"><div class="navbar__inner"><div class="navbar__items"><button aria-label="Navigation bar toggle" class="navbar__toggle clean-btn" type="button" tabindex="0"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/Explorer-Kura/"><b class="navbar__title">Explorer-Kura</b></a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/Explorer-Kura/api/">API</a></div><div class="navbar__items navbar__items--right"><a href="https://github.com/Scratcher-Studios/Explorer-Kura" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link"><span>GitHub<svg width="13.5" height="13.5" aria-hidden="true" viewBox="0 0 24 24" class="iconExternalLink_3J9K"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"></path></svg></span></a><div class="toggle_71bT toggle_3Zt9 toggleDisabled_3cF-"><div class="toggleTrack_32Fl" role="button" tabindex="-1"><div class="toggleTrackCheck_3lV7"><span class="toggleIcon_O4iE">🌜</span></div><div class="toggleTrackX_S2yS"><span class="toggleIcon_O4iE">🌞</span></div><div class="toggleTrackThumb_xI_Z"></div></div><input type="checkbox" class="toggleScreenReader_28Tw" aria-label="Switch between dark and light mode"></div><div class="navbar__search"><span aria-label="expand searchbar" role="button" class="search-icon" tabindex="0"></span><input type="search" id="search_input_react" placeholder="Press S to Search..." aria-label="Search" class="navbar__search-input search-bar"></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div class="main-wrapper docPageContainer_2Kz0"><div class="docPage_1bdk"><div class="docSidebarContainer_1ykS"><div class="sidebar_15mo"><nav class="menu thin-scrollbar menu_Bmed"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/Explorer-Kura/api/LocatorsClient">​Locators​Client</a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/Explorer-Kura/api/LocatorsServer">​Locators​Server</a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/Explorer-Kura/api/MutedPlayers">​Muted​Players</a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" href="/Explorer-Kura/api/QuickAction">​Quick​Action</a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/Explorer-Kura/api/TeleportTargets">​Teleport​Targets</a></li></ul></nav><button type="button" title="Collapse sidebar" aria-label="Collapse sidebar" class="button button--secondary button--outline collapseSidebarButton_1CGd"><svg width="20" height="20" aria-hidden="true" class="collapseSidebarButtonIcon_3E-R"><g fill="#7a7a7a"><path d="M9.992 10.023c0 .2-.062.399-.172.547l-4.996 7.492a.982.982 0 01-.828.454H1c-.55 0-1-.453-1-1 0-.2.059-.403.168-.551l4.629-6.942L.168 3.078A.939.939 0 010 2.528c0-.548.45-.997 1-.997h2.996c.352 0 .649.18.828.45L9.82 9.472c.11.148.172.347.172.55zm0 0"></path><path d="M19.98 10.023c0 .2-.058.399-.168.547l-4.996 7.492a.987.987 0 01-.828.454h-3c-.547 0-.996-.453-.996-1 0-.2.059-.403.168-.551l4.625-6.942-4.625-6.945a.939.939 0 01-.168-.55 1 1 0 01.996-.997h3c.348 0 .649.18.828.45l4.996 7.492c.11.148.168.347.168.55zm0 0"></path></g></svg></button></div></div><main class="docMainContainer_28N5"><div class="container padding-vert--lg"><div class="row"><div class="col docItemCol_3WPG"><div class="docItemContainer_3XDu"><article><div class="member_qHIL markdown"><div class="tocCollapsible_1PrD theme-doc-toc-mobile tocMobile_3ryM"><button type="button" class="clean-btn tocCollapsibleButton_2O1e">On this page</button></div><header><h1 class="docTitle_1ddc" style="text-decoration:none"><span style="display:inline-block">Quick</span><span style="display:inline-block">Action</span></h1><div class="luaClassTags_2Zrs"></div><div>
+<p>Quick Actions provide an interface for the educator to control the experience of the class in your experience. From a single button press on the Quick Actions interface, the Educator can initiate actions to change the Experience.</p>
+<div class="admonition admonition-note alert alert--secondary">
+  <div class="admonition-heading">
+    <h5><span class="admonition-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="16" viewBox="0 0 14 16">
+          <path d="M6.3 5.69a.942.942 0 0 1-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 0 1-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"></path>
+        </svg></span>note</h5>
+  </div>
+  <div class="admonition-content">
+    <p>This module relies on Kura Remote Events.</p>
+  </div>
+</div>
+</div></header><h2 class="anchor anchorWithStickyNavbar_31ik" id="properties">Properties<a aria-hidden="true" class="hash-link" href="#properties" title="Direct link to heading">​</a></h2><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="FriendlyName"><code style="text-decoration:none">FriendlyName</code><a aria-hidden="true" class="hash-link" href="#FriendlyName" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/Scratcher-Studios/Explorer-Kura/blob/master/src/shared/ExplorerKuraQuickActions/ExampleQuickActionsModule.lua#L23"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>QuickAction<!-- -->.<!-- -->FriendlyName<!-- -->:<!-- --> </code> <code class="blue_2Afy">string</code><code class="op_1JtD"> | </code><code class="purple__nFc">{</code><div class="inset_2cJr"><code>true<!-- -->: </code><code class="blue_2Afy">string</code><code class="purple__nFc">,</code></div><div class="inset_2cJr"><code>false<!-- -->: </code><code class="blue_2Afy">string</code></div><code class="purple__nFc">}</code></div><div>
+<p>FriendlyName can either be a fixed string or can vary depending on state, where a table with boolean keys and string values is used.</p>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="DefaultState"><code style="text-decoration:none">DefaultState</code><a aria-hidden="true" class="hash-link" href="#DefaultState" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/Scratcher-Studios/Explorer-Kura/blob/master/src/shared/ExplorerKuraQuickActions/ExampleQuickActionsModule.lua#L33"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>QuickAction<!-- -->.<!-- -->DefaultState<!-- -->:<!-- --> </code> <code class="blue_2Afy">boolean</code></div><div>
+<p>Specifies the default state which will be passed on to the button in the Quick Action interface.</p>
+<div class="admonition admonition-caution alert alert--warning">
+  <div class="admonition-heading">
+    <h5><span class="admonition-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+          <path d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path>
+        </svg></span>caution</h5>
+  </div>
+  <div class="admonition-content">
+    <p>If not specified, the DefaultState will be set to false.</p>
+  </div>
+</div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="Image"><code style="text-decoration:none">Image</code><a aria-hidden="true" class="hash-link" href="#Image" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/Scratcher-Studios/Explorer-Kura/blob/master/src/shared/ExplorerKuraQuickActions/ExampleQuickActionsModule.lua#L43"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>QuickAction<!-- -->.<!-- -->Image<!-- -->:<!-- --> </code> <code class="blue_2Afy">Content</code></div><div>
+<p>Add an image to the button.</p>
+<div class="admonition admonition-info alert alert--info">
+  <div class="admonition-heading">
+    <h5><span class="admonition-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="16" viewBox="0 0 14 16">
+          <path d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path>
+        </svg></span>info</h5>
+  </div>
+  <div class="admonition-content">
+    <p>If not specified, a default specified in ExplorerKuraServer(/init.server.lua) is used instead with a warning.</p>
+  </div>
+</div>
+</div><h2 class="anchor anchorWithStickyNavbar_31ik" id="functions">Functions<a aria-hidden="true" class="hash-link" href="#functions" title="Direct link to heading">​</a></h2><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="ClientFunction"><code style="text-decoration:none">ClientFunction</code><a aria-hidden="true" class="hash-link" href="#ClientFunction" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/Scratcher-Studios/Explorer-Kura/blob/master/src/shared/ExplorerKuraQuickActions/ExampleQuickActionsModule.lua#L57"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>QuickAction<!-- -->.</code><code class="green_3LnD">ClientFunction</code><code>(</code><div class="inset_2cJr"><div><code>onState:<!-- -->: </code><code class="blue_2Afy">boolean</code><span class="inlineDescription_17uy">-- <span>
+<p>Passes on the state of the button from the Quick Action interface.</p>
+</span></span></div></div><code>) → </code><code>(</code><div class="inset_2cJr"><div><code>OnStateResult<!-- -->: </code><code class="blue_2Afy">boolean</code><code>,</code><span class="inlineDescription_17uy">-- <span>
+<p>The new resultant state which will be passed on to the interface to be displayed.</p>
+</span></span></div><div><code>FireServer<!-- -->: </code><code class="blue_2Afy">any</code><span class="inlineDescription_17uy">-- <span>
+<p>The argument which will be passed onto the server after this function finishes via KuraRE. If it is nil, KuraRE does not fire.</p>
+</span></span></div></div><code>)</code></div><div>
+<p>The ClientFunction is the function that is passed onto the client which is run when the button on the Quick Actions section is activated.</p>
+<div class="admonition admonition-danger alert alert--danger">
+  <div class="admonition-heading">
+    <h5><span class="admonition-icon"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="16" viewBox="0 0 12 16">
+          <path d="M5.05.31c.81 2.17.41 3.38-.52 4.31C3.55 5.67 1.98 6.45.9 7.98c-1.45 2.05-1.7 6.53 3.53 7.7-2.2-1.16-2.67-4.52-.3-6.61-.61 2.03.53 3.33 1.94 2.86 1.39-.47 2.3.53 2.27 1.67-.02.78-.31 1.44-1.13 1.81 3.42-.59 4.78-3.42 4.78-5.56 0-2.84-2.53-3.22-1.25-5.61-1.52.13-2.03 1.13-1.89 2.75.09 1.08-1.02 1.8-1.86 1.33-.67-.41-.66-1.19-.06-1.78C8.18 5.31 8.68 2.45 5.05.32L5.03.3l.02.01z"></path>
+        </svg></span>danger</h5>
+  </div>
+  <div class="admonition-content">
+    <p>Remember that the onStateResult should be opposite of onState if you want a simple boolean button. Otherwise, the button will get stuck in one state.</p>
+  </div>
+</div>
+</div><div class="divider_3z1R"></div><h3 class="anchor anchorWithStickyNavbar_31ik" id="ServerEvent"><code style="text-decoration:none">ServerEvent</code><a aria-hidden="true" class="hash-link" href="#ServerEvent" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_1UH0"><a class="sourceButton_2aE5" href="https://github.com/Scratcher-Studios/Explorer-Kura/blob/master/src/shared/ExplorerKuraQuickActions/ExampleQuickActionsModule.lua#L73"><div class="sourceButtonText_monK">&lt;/&gt;</div></a></div><div class="memberString_P8-X"><code>QuickAction<!-- -->.</code><code class="green_3LnD">ServerEvent</code><code>(</code><div class="inset_2cJr"><div><code>Player:<!-- -->: </code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Player" target="_blank" rel="noopener noreferrer">Player<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_17uy">-- <span>
+<p>Player who initiated the ClientFunction. This is sanity-checked as the Educator.</p>
+</span></span></div><div><code>ExplorerArgs<!-- -->: </code><code class="blue_2Afy">=</code><code class="purple__nFc">{</code><div class="inset_2cJr"><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Explorer-Kura/api/TeleportTargets">TeleportTargets</a></code><code class="blue_2Afy">=</code><code class="green_3LnD">{</code><span><code>[</code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Player" target="_blank" rel="noopener noreferrer">Player<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>]</code></span><code>: </code><code class="blue_2Afy">TeleportTarget</code><code class="green_3LnD">}</code><code class="purple__nFc">,</code></div><div class="inset_2cJr"><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="/Explorer-Kura/api/MutedPlayers">MutedPlayers</a></code><code class="blue_2Afy">=</code><code class="green_3LnD">{</code><span><code>[</code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Player" target="_blank" rel="noopener noreferrer">Player<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>]</code></span><code>: </code><code class="blue_2Afy">MutedPlayer</code><code class="green_3LnD">}</code><code class="purple__nFc">,</code></div><div class="inset_2cJr"><code class="blue_2Afy">Locators</code><code class="blue_2Afy">=</code><code class="green_3LnD">{</code><span><code>[</code><code class="blue_2Afy"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Player" target="_blank" rel="noopener noreferrer">Player<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>]</code></span><code>: </code><code class="blue_2Afy">LocatorServer</code><code class="green_3LnD">}</code><code class="purple__nFc">,</code></div><div class="inset_2cJr"></div><code class="purple__nFc">}</code><code>,</code><span class="inlineDescription_17uy">-- <span>
+<p>Arguments passed on from ExplorerKuraServer. If you are not using QuickActions, use the ExplorerGetters folder.</p>
+</span></span></div><div><code>ClientArgs:<!-- -->: </code><code class="blue_2Afy">any</code><span class="inlineDescription_17uy">-- <span>
+<p>Arguments passed on by the user in the ClientFunction.</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>The ServerEvent is the function that the server runs if KuraRE is fired in ClientFunction by providing a return value that is not nil.</p>
+</div></div></article></div><details><summary>Show raw api</summary><pre style="max-width:100%;white-space:pre-wrap">{
+    &quot;functions&quot;: [
+        {
+            &quot;name&quot;: &quot;ClientFunction&quot;,
+            &quot;desc&quot;: &quot;The ClientFunction is the function that is passed onto the client which is run when the button on the Quick Actions section is activated.\n:::danger\nRemember that the onStateResult should be opposite of onState if you want a simple boolean button. Otherwise, the button will get stuck in one state.\n:::&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;onState:&quot;,
+                    &quot;desc&quot;: &quot;Passes on the state of the button from the Quick Action interface.&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;The new resultant state which will be passed on to the interface to be displayed.&quot;,
+                    &quot;lua_type&quot;: &quot;OnStateResult: boolean&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;The argument which will be passed onto the server after this function finishes via KuraRE. If it is nil, KuraRE does not fire.&quot;,
+                    &quot;lua_type&quot;: &quot;FireServer: any&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 57,
+                &quot;path&quot;: &quot;src/shared/ExplorerKuraQuickActions/ExampleQuickActionsModule.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;ServerEvent&quot;,
+            &quot;desc&quot;: &quot;The ServerEvent is the function that the server runs if KuraRE is fired in ClientFunction by providing a return value that is not nil.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;Player:&quot;,
+                    &quot;desc&quot;: &quot;Player who initiated the ClientFunction. This is sanity-checked as the Educator.&quot;,
+                    &quot;lua_type&quot;: &quot;Player&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;ExplorerArgs&quot;,
+                    &quot;desc&quot;: &quot;Arguments passed on from ExplorerKuraServer. If you are not using QuickActions, use the ExplorerGetters folder.&quot;,
+                    &quot;lua_type&quot;: &quot;= {TeleportTargets = {[Player]: TeleportTarget}, MutedPlayers = {[Player]: MutedPlayer}, Locators = {[Player]: LocatorServer},}&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;ClientArgs:&quot;,
+                    &quot;desc&quot;: &quot;Arguments passed on by the user in the ClientFunction.&quot;,
+                    &quot;lua_type&quot;: &quot;any&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 73,
+                &quot;path&quot;: &quot;src/shared/ExplorerKuraQuickActions/ExampleQuickActionsModule.lua&quot;
+            }
+        }
+    ],
+    &quot;properties&quot;: [
+        {
+            &quot;name&quot;: &quot;FriendlyName&quot;,
+            &quot;desc&quot;: &quot;FriendlyName can either be a fixed string or can vary depending on state, where a table with boolean keys and string values is used.&quot;,
+            &quot;lua_type&quot;: &quot;string | {true: string, false: string}&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 23,
+                &quot;path&quot;: &quot;src/shared/ExplorerKuraQuickActions/ExampleQuickActionsModule.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;DefaultState&quot;,
+            &quot;desc&quot;: &quot;Specifies the default state which will be passed on to the button in the Quick Action interface.\n:::caution\nIf not specified, the DefaultState will be set to false.\n:::&quot;,
+            &quot;lua_type&quot;: &quot;boolean&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 33,
+                &quot;path&quot;: &quot;src/shared/ExplorerKuraQuickActions/ExampleQuickActionsModule.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Image&quot;,
+            &quot;desc&quot;: &quot;Add an image to the button.\n:::info\nIf not specified, a default specified in ExplorerKuraServer(/init.server.lua) is used instead with a warning.\n:::&quot;,
+            &quot;lua_type&quot;: &quot;Content&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 43,
+                &quot;path&quot;: &quot;src/shared/ExplorerKuraQuickActions/ExampleQuickActionsModule.lua&quot;
+            }
+        }
+    ],
+    &quot;types&quot;: [],
+    &quot;name&quot;: &quot;QuickAction&quot;,
+    &quot;desc&quot;: &quot;Quick Actions provide an interface for the educator to control the experience of the class in your experience. From a single button press on the Quick Actions interface, the Educator can initiate actions to change the Experience.\n:::note\nThis module relies on Kura Remote Events.\n:::&quot;,
+    &quot;source&quot;: {
+        &quot;line&quot;: 10,
+        &quot;path&quot;: &quot;src/shared/ExplorerKuraQuickActions/ExampleQuickActionsModule.lua&quot;
+    }
+}</pre></details></div><div class="col col--3"><div class="tableOfContents_35-E thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link toc-highlight">Types</a></li><li><a href="#properties" class="table-of-contents__link toc-highlight">Properties</a><ul><li><a href="#DefaultState" class="table-of-contents__link toc-highlight">DefaultState</a></li><li><a href="#FriendlyName" class="table-of-contents__link toc-highlight">FriendlyName</a></li><li><a href="#Image" class="table-of-contents__link toc-highlight">Image</a></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#ClientFunction" class="table-of-contents__link toc-highlight">.ClientFunction</a></li><li><a href="#ServerEvent" class="table-of-contents__link toc-highlight">.ServerEvent</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="footer footer--dark"><div class="container"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2022 Scratcher-Studios. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
+<script src="/Explorer-Kura/assets/js/runtime~main.03af59af.js"></script>
+<script src="/Explorer-Kura/assets/js/main.999c5d08.js"></script>
+</body>
+</html>

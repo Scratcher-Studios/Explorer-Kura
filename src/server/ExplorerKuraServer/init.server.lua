@@ -25,6 +25,7 @@ local TextService = game:GetService("TextService")
 
 local TESTING_MODE = 0 -- Set to false or 0 to disable, or 1 for Educator or 2 for Student
 local PartyTable = table.create(Players.MaxPlayers)
+local ROBLOX_EDUCATOR_GROUP_ID: number = 11609721
 local Educator
 
 local ExplorerGetters = Instance.new("Folder")
@@ -222,6 +223,13 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
 end
 
 local function PlayerJoinFunc(player: Player)
+    task.spawn(function()
+        if player:IsInGroup(ROBLOX_EDUCATOR_GROUP_ID) then
+            if not Educator then
+                Educator = player
+            end
+        end
+    end)
     local PlayerJoinData = player:GetJoinData()
     if PlayerJoinData.SourcePlaceId == 2901715109 or PlayerJoinData.SourcePlaceId == 3088421028 then
         -- So they joined from an Explorer Place Id (THIS IS NOT FINAL)
@@ -236,12 +244,12 @@ local function PlayerJoinFunc(player: Player)
             Educator = player
         end
     end
-    coroutine.resume(coroutine.create(function()
+    task.spawn(function()
         MutedPlayers[player] = MutedPlayersModule.New(player)
         local character = player.Character or player.CharacterAdded:Wait()
         PlayerTeleportTargets[player] = TeleportTargets.New(player)
         Locators[player] = LocatorsModule.New(player)
-    end))
+    end)
 end
 
 Players.PlayerAdded:Connect(PlayerJoinFunc)

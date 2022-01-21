@@ -1,3 +1,9 @@
+--[=[
+	@class LocatorsClient
+
+	Stores locator information client-side and displays locators.
+]=]
+
 local obj = {}
 obj.__index = obj
 local Players = game:GetService("Players")
@@ -6,6 +12,12 @@ local CharacterConnections = table.create(Players.MaxPlayers)
 local Fusion = require(script.Parent.Fusion)
 local New = Fusion.New
 local Children = Fusion.Children
+
+--[=[
+	@within LocatorsClient
+	Creates LocatorClient object. No paramaters are passed as it is associated with the game rather than a specific player.
+	@return LocatorClient
+]=]
 
 function obj.New()
 	local self = table.create(Players.MaxPlayers)
@@ -63,6 +75,12 @@ function obj.New()
 	return self
 end
 
+--[=[
+	@within LocatorsClient
+	Shows locator of a specific player.
+	@param player Player -- Player which the Locator is associated with.
+]=]
+
 function obj:ShowLocator(player)
 	if self[player] then
 		self[player].Enabled = true
@@ -71,6 +89,12 @@ function obj:ShowLocator(player)
 	end
 end
 
+--[=[
+	@within LocatorsClient
+	Hides locator of a specific player.
+	@param player Player -- Player which the Locator is associated with.
+]=]
+
 function obj:HideLocator(player)
 	if self[player] then
 		self[player].Enabled = false
@@ -78,6 +102,12 @@ function obj:HideLocator(player)
 		warn("unable to find player billboardgui")
 	end
 end
+
+--[=[
+	@within LocatorsClient
+	Gets if locator of a specific player is enabled.
+	@param player Player -- Player which the Locator is associated with.
+]=]
 
 function obj:GetPlayerLocatorStatus(player)
 	if self[player] then

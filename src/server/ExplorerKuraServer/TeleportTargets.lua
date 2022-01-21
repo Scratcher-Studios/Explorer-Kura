@@ -1,6 +1,10 @@
---[[
-    Creates a TeleportTarget which allows for teleportation. Licensed with Apache Version 2.0. See LICENSE for details. (c) 2022 Explorers of the Metaverse
-]]
+-- Creates a TeleportTarget which allows for teleportation. Licensed with Apache Version 2.0. See LICENSE for details. (c) 2022 Explorers of the Metaverse
+
+--[=[
+    @class TeleportTargets
+
+    TeleportTargets is a server side module intended to facilitate teleportation of players to and from each other, as well as to a single spawn point or a spawn point set beforehand through [RespawnLocation](https://developer.roblox.com/en-us/api-reference/property/Player/RespawnLocation).
+]=]
 
 local obj = {}
 obj.__index = obj
@@ -20,6 +24,13 @@ local function Teleport(ToTeleport: Model, TeleportLocation: BasePart)
         error("PivotTo support is not implemented at this time, use Vector3 instead.")
     end
 end
+
+--[=[
+    @within TeleportTargets
+    Creates a TeleportTarget object.
+    @param Target Player -- Player who the TeleportTarget is associated with.
+    @return TeleportTarget
+]=]
 
 function obj.New(Target)
     local self = {}
@@ -52,8 +63,15 @@ function obj.New(Target)
         self.Type = "Model"
     end
     setmetatable(self, obj)
+    
     return self
 end
+
+--[=[
+    @within TeleportTargets
+    Teleports the Target of a TeleportTarget to another Target of a TeleportTarget. If no parameter is passed, the target is the spawnpoint of the character.
+    @param TeleportTarget TeleportTarget | nil -- Player who the TeleportTarget is associated with.
+]=]
 
 function obj:TeleportTo(TeleportTarget)
     -- Honestly I should do type checking here. But I have decided not to for laziness.
@@ -92,6 +110,11 @@ function obj:TeleportTo(TeleportTarget)
         error("Unknown target type.")
     end
 end
+
+--[=[
+    @within TeleportTargets
+    Destroys object.
+]=]
 
 function obj:Destroy()
     self.__Maid = nil

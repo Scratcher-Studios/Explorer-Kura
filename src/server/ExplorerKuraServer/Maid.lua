@@ -4,7 +4,7 @@
 -- License: MIT (https://github.com/Quenty/NevermoreEngine/blob/version2/LICENSE.md)
 
 
----	Manages the cleaning of events and other things.
+--	Manages the cleaning of events and other things.
 -- Useful for encapsulating state and make deconstructors easy
 -- @classmod Maid
 -- @see Signal
@@ -12,7 +12,7 @@
 local Maid = {}
 Maid.ClassName = "Maid"
 
---- Returns a new Maid object
+-- Returns a new Maid object
 -- @constructor Maid.new()
 -- @treturn Maid
 function Maid.new()
@@ -25,7 +25,7 @@ function Maid.isMaid(value)
 	return type(value) == "table" and value.ClassName == "Maid"
 end
 
---- Returns Maid[key] if not part of Maid metatable
+-- Returns Maid[key] if not part of Maid metatable
 -- @return Maid[key] value
 function Maid:__index(index)
 	if Maid[index] then
@@ -35,7 +35,7 @@ function Maid:__index(index)
 	end
 end
 
---- Add a task to clean up. Tasks given to a maid will be cleaned when
+-- Add a task to clean up. Tasks given to a maid will be cleaned when
 --  maid[index] is set to a different value.
 -- @usage
 -- Maid[key] = (function)         Adds a task to perform
@@ -71,7 +71,7 @@ function Maid:__newindex(index, newTask)
 	end
 end
 
---- Same as indexing, but uses an incremented number as a key.
+-- Same as indexing, but uses an incremented number as a key.
 -- @param task An item to clean
 -- @treturn number taskId
 function Maid:giveTask(task)
@@ -116,7 +116,7 @@ function Maid:give(taskOrPromise)
 	return taskOrPromise, taskId
 end
 
---- Cleans up all tasks.
+-- Cleans up all tasks.
 -- @alias Destroy
 function Maid:doCleaning()
 	local tasks = self._tasks
@@ -146,7 +146,7 @@ function Maid:doCleaning()
 	end
 end
 
---- Alias for DoCleaning()
+-- Alias for DoCleaning()
 -- @function Destroy
 Maid.destroy = Maid.doCleaning
 Maid.clean = Maid.doCleaning

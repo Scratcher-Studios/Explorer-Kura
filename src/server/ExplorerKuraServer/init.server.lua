@@ -195,7 +195,7 @@ RF.OnServerInvoke = function(player: userdata, command: string, arg: table)
                         -- Bit of a weird fix but Remotes are weird like that
                         QuickAction.FriendlyName = {}
                     else
-                        assert(typeof(QuickAction.FriendlyName) == "string", "FriendlyName of QuickAction must be a string.")
+                        assert(typeof(QuickAction.FriendlyName) == "string", "FriendlyName of QuickAction must be a string or table as specified in the API reference.")
                     end
                     if typeof(QuickAction.Image) ~= "string" then
                         QuickAction.Image = "rbxassetid://8129843059" -- Default replacement image

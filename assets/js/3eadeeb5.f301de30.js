@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[571],{97868:function(r){r.exports=JSON.parse('{"sourceUrl":"https://github.com/Scratcher-Studios/Explorer-Kura/blob/main","baseUrl":"/Explorer-Kura/","classOrder":["QuickAction"],"apiCategories":[]}')}}]);

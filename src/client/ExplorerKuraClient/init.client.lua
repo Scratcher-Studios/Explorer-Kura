@@ -44,7 +44,7 @@ local ComputedPairs = Fusion.ComputedPairs
 local FusionTween = Fusion.Tween
 local New = Fusion.New
 
-local LocalKuraVersionState = State("dev")-- State({MajorVersionNumber = 0; MinorVersionNumber = 0; PatchNumber = 0;})
+local LocalKuraVersionState = State({MajorVersionNumber = 0; MinorVersionNumber = 2; PatchNumber = 0;})
 
 local TInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut, 1, false, 0) -- repeatCount should be 0 but it is 1 otherwise Fusion borkes itself
 

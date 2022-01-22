@@ -1,5 +1,5 @@
 --[[
-    EXPLORER KURA VERSION DEV
+    EXPLORER KURA VERSION 0.2.0
     Thank you for choosing to install Explorer Kura.
     To install, please parent this script to Workspace, select the contents of this script (Ctrl+A), copy into the Command Bar (bar at the
     bottom of your screen) and hit Enter to run the script.

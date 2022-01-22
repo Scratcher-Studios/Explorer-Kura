@@ -9,14 +9,14 @@ classOrder = [
 [docusaurus]
 onBrokenLinks = "throw"
 onBrokenMarkdownLinks = "warn"
-favicon = "/favicon.png"
+favicon = "https://raw.githubusercontent.com/Scratcher-Studios/Explorer-Kura/main/.moonwave/favicon.png"
 [[themeConfig]]
 [[themeConfig.navbar]]
 title = 'Explorer Kura'
 [[themeConfig.navbar.logo]]
 alt = 'Explorer Kura Logo'
-src = '/logoblack.png'
-srcDark = '/Logo.png'
+src = 'https://github.com/Scratcher-Studios/Explorer-Kura/blob/main/.moonwave/logoblack.png'
+srcDark = 'https://raw.githubusercontent.com/Scratcher-Studios/Explorer-Kura/main/.moonwave/Logo.png'
 href = 'https://scratcher-studios.github.io/Explorer-Kura/'
 target = '_self'
 width = 244.625
@@ -62,14 +62,14 @@ includeReadme = false
 [[home.features]]
 title = "A sleek user interface"
 description = "A modern, easy to use user interface for the future of classrooms."
-image = "/gui.svg"
+image = "https://raw.githubusercontent.com/Scratcher-Studios/Explorer-Kura/main/.moonwave/gui.svg"
 
 [[home.features]]
 title = "Extensibility for Educators and Developers"
 description = "Give educators the control the experience to suit the students needs with the QuickAction API."
-image = "/buildingblocks.svg"
+image = "https://raw.githubusercontent.com/Scratcher-Studios/Explorer-Kura/main/.moonwave/buildingblocks.svg"
 
 [[home.features]]
 title = "Free, Open, Connected."
 description = "No cost to educator or developer, with greater featuresets in the works."
-image = "/co-operation.svg"
+image = "https://raw.githubusercontent.com/Scratcher-Studios/Explorer-Kura/main/.moonwave/co-operation.svg"

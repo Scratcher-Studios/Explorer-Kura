@@ -1,4 +1,5 @@
 title = "Explorer Kura"
+tagline = "A replacement for Roblox's Classroom Mode."
 
 gitSourceBranch = "main"
 changelog = true
@@ -21,8 +22,6 @@ href = 'https://scratcher-studios.github.io/Explorer-Kura/'
 target = '_self'
 width = 244.625
 height = 64
-
-tagline = "A replacement for Roblox's Classroom Mode."
 
 [footer]
 style = "dark"
@@ -61,15 +60,15 @@ includeReadme = false
 
 [[home.features]]
 title = "A sleek user interface"
-description = "A modern, easy to use user interface for the future of classrooms."
+description = "A modern, easy to use user interface for the future of classrooms in the metaverse."
 image = "https://raw.githubusercontent.com/Scratcher-Studios/Explorer-Kura/main/.moonwave/gui.svg"
 
 [[home.features]]
 title = "Extensibility for Educators and Developers"
-description = "Give educators the control the experience to suit the students needs with the QuickAction API."
+description = "Give educators control of the experience to suit the needs of the classroom with the Kura API."
 image = "https://raw.githubusercontent.com/Scratcher-Studios/Explorer-Kura/main/.moonwave/buildingblocks.svg"
 
 [[home.features]]
 title = "Free, Open, Connected."
-description = "No cost to educator or developer, with greater featuresets in the works."
+description = "No cost to educator or developer, with more features and integrations in the works."
 image = "https://raw.githubusercontent.com/Scratcher-Studios/Explorer-Kura/main/.moonwave/co-operation.svg"

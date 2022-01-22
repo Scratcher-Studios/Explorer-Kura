@@ -22,4 +22,4 @@ Explorer Kura utilises Apache-2.0 licensing to allow developers to customise the
 
 ## The future of Kura
 
-Explorer will be released in H2 2022. When this happens, Explorer Kura will then be able to link to Explorer to allow educators to create Education Group Joins with privacy settings, allowing educators to access a curated list of experiences with management permissions in these experiences, no additional sign-ups required.
+Explorer will be released in H2 2022. When this happens, Explorer Kura will then be able to link to Explorer to allow educators to create Education Group Joins with privacy settings, allowing educators to access a curated list of experiences with management permissions in these experiences to avoid undesirable behaviour, no additional sign-ups required.

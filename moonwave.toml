@@ -10,6 +10,17 @@ classOrder = [
 onBrokenLinks = "throw"
 onBrokenMarkdownLinks = "warn"
 favicon = "/favicon.png"
+[[themeConfig]]
+[[themeConfig.navbar]]
+title = 'Explorer Kura'
+[[themeConfig.navbar.logo]]
+alt = 'Explorer Kura Logo'
+src = '/logoblack.png'
+srcDark = '/Logo.png'
+href = 'https://scratcher-studios.github.io/Explorer-Kura/'
+target = '_self'
+width = 244.625
+height = 64
 
 tagline = "A replacement for Roblox's Classroom Mode."
 
@@ -51,11 +62,14 @@ includeReadme = false
 [[home.features]]
 title = "A sleek user interface"
 description = "A modern, easy to use user interface for the future of classrooms."
+image = "/gui.svg"
 
 [[home.features]]
 title = "Extensibility for Educators and Developers"
 description = "Give educators the control the experience to suit the students needs with the QuickAction API."
+image = "/buildingblocks.svg"
 
 [[home.features]]
 title = "Free, Open, Connected."
 description = "No cost to educator or developer, with greater featuresets in the works."
+image = "/co-operation.svg"

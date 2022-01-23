@@ -6,13 +6,15 @@
 
 **Via GitHub**
 
-Go to the Releases page and download the .rbxm file of the latest version.
+Go to the [Releases](https://github.com/Scratcher-Studios/Explorer-Kura/releases) page on GitHub and download the .rbxm file of the latest version.
 
 **Via Roblox**
 
-Go to the Releases page and follow the link to the Roblox mode.
+[This link will direct you to the latest published version of the module.](https://www.roblox.com/library/8608062925/Explorer-Kura-Education-Module)
 
-Only trust models created by EcoScratcher (with a verified tick) or Explorers of the Metaverse.
+Alternatively, go to the [Releases](https://github.com/Scratcher-Studios/Explorer-Kura/releases) page on GitHub and follow the link to the Roblox model.
+
+Only trust models created by [EcoScratcher](https://www.roblox.com/users/153299765/profile) (with a verified tick) or [Explorers of the Metaverse](https://www.roblox.com/groups/12236350/Explorers-of-the-Metaverse#!/about).
 
 ### 2. Run the Script
 
@@ -23,7 +25,7 @@ Copy and paste the Kura Installation script into the Command Bar. This is the ba
 In ExplorerKuraServer, change the TESTING_MODE variable to 1 (for Educator) or 2 (for Student). This will allow you to test if the installation has succeeded.
 
 ## Install via GitHub
-Download from the GitHub repository the zip, then copy the the following in some order:
+Download from the GitHub repository the zip, then place the following scripts in these following areas:
 
 ExplorerKuraClient goes into client (StarterPlayerScripts)
 

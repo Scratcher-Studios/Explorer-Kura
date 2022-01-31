@@ -40,3 +40,10 @@ As it is curently set:
 - TopbarPlus will use the currently initialised version as per the value object in ReplicatedStorage. If there is no initialised version, the version bundled with Kura will be initialised.
 
 - Fusion will use the version bundled with Kura as it is currently still pre-release software.
+
+The following table shows which versions of Fusion are bundled with each version of Explorer Kura.
+
+| Kura version | Fusion version |
+|--------------|----------------|
+| v0.2.0       | v0.1           |
+| v0.1.0       | v0.1           |

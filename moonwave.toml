@@ -14,14 +14,6 @@ favicon = "https://raw.githubusercontent.com/Scratcher-Studios/Explorer-Kura/mai
 [[themeConfig]]
 [[themeConfig.navbar]]
 title = 'Explorer Kura'
-[[themeConfig.navbar.logo]]
-alt = 'Explorer Kura Logo'
-src = 'https://github.com/Scratcher-Studios/Explorer-Kura/blob/main/.moonwave/logoblack.png'
-srcDark = 'https://raw.githubusercontent.com/Scratcher-Studios/Explorer-Kura/main/.moonwave/Logo.png'
-href = 'https://scratcher-studios.github.io/Explorer-Kura/'
-target = '_self'
-width = 244.625
-height = 64
 
 [footer]
 style = "dark"
@@ -31,6 +23,14 @@ copyright = "Copyright © 2022 Explorers of the Metaverse. Built with Moonwave a
 href = "https://guilded.gg/ScratcherStudios"
 label = "Guilded"
 position = "right"
+
+[navbar]
+title = ""
+
+[navbar.logo]
+alt = 'Explorer Kura Logo'
+src = 'https://raw.githubusercontent.com/Scratcher-Studios/Explorer-Kura/main/.moonwave/logoblack.png'
+srcDark = 'https://raw.githubusercontent.com/Scratcher-Studios/Explorer-Kura/main/.moonwave/Logo.png'
 
 [[footer.links]]
 title = "Support"

@@ -45,5 +45,6 @@ The following table shows which versions of Fusion are bundled with each version
 
 | Kura version | Fusion version |
 |--------------|----------------|
+| v0.2.1       | v0.1           |
 | v0.2.0       | v0.1           |
 | v0.1.0       | v0.1           |

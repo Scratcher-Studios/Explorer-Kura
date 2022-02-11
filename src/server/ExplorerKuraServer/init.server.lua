@@ -77,6 +77,7 @@ RE.Name = "KuraRE"
 RE.Parent = ReplicatedStorage
 
 RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
+    assert(typeof(command) == string, "Command must be string.")
     if player == Educator then
         -- print(command, arg)
         if command == "PlayerFrames" then
@@ -101,7 +102,7 @@ RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
             end
         elseif command == "QuickActions" then
             if typeof(arg) == "table" then
-                if QuickActionsServerEvents[arg[1]] then
+                if QuickActionsServerEvents[arg[1]] ~= nil then
                     QuickActionsServerEvents[arg[1]](player, {["TeleportTargets"] = PlayerTeleportTargets; ["MutedPlayers"] = MutedPlayers; ["Locators"] = Locators;},arg[2])
                 end
             end  
@@ -109,7 +110,7 @@ RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
     end
     if command == "ShowLocators" then
         if Educator == player and typeof(arg) == "table" then
-            if Locators[arg[1]] then
+            if typeof(Locators[arg[1]]) == "Instance" then
                 if Locators[arg[1]] == Educator then
                     Locators[arg[1]]:ShowLocator(true, Educator, true)
                 else
@@ -120,8 +121,8 @@ RE.OnServerEvent:Connect(function(player: Player, command: string, arg)
             Locators[player]:ShowLocator(false, Educator)
         end
     elseif command == "HideLocators" then
-        if Educator == player and arg[1] then
-            if Locators[arg[1]] then
+        if Educator == player and typeof(arg) == "table" then
+            if typeof(Locators[arg[1]]) == "Instance" then
                 if Locators[arg[1]] == Educator then
                     Locators[arg[1]]:HideLocator(true, Educator, true)
                 else
@@ -224,10 +225,8 @@ end
 
 local function PlayerJoinFunc(player: Player)
     task.spawn(function()
-        if player:IsInGroup(ROBLOX_EDUCATOR_GROUP_ID) then
-            if not Educator then
-                Educator = player
-            end
+        if player:IsInGroup(ROBLOX_EDUCATOR_GROUP_ID) and player.UserId == game.PrivateServerOwnerId  then
+            Educator = player
         end
     end)
     local PlayerJoinData = player:GetJoinData()
@@ -238,10 +237,6 @@ local function PlayerJoinFunc(player: Player)
                 PartyTable = CopyDict(PlayerJoinData.TeleportData.GroupJoinPlayers)
                 Educator = PartyTable[1]
             end
-        end
-    elseif game.PrivateServerId ~= 0 then
-        if player.UserId == game.PrivateServerOwnerId then
-            Educator = player
         end
     end
     task.spawn(function()
@@ -254,7 +249,7 @@ end
 
 Players.PlayerAdded:Connect(PlayerJoinFunc)
 
-Players.PlayerRemoving:Connect(function(player)
+Players.PlayerRemoving:Connect(function(player: Player)
     PlayerTeleportTargets[player]:Destroy()
     Locators[player]:Destroy()
     MutedPlayers[player]:Destroy()
